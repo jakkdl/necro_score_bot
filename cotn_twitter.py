@@ -5,12 +5,13 @@ import json
 import codecs
 import twitter
 import os
+import os.path
 import time
 
 
 
 basePath = '/home/hatten/Var/cotn/'
-boardfile = basePath + 'leaderboards.xml'
+boardFile = basePath + 'leaderboards.xml'
 lastPath = basePath + 'last/'
 currPath = basePath + 'tmp/'
 configPath = '/home/hatten/.config/cotn/'
@@ -46,14 +47,18 @@ def includeBoard(name):
             return False
     if 'speedrun' in name.lower() and 'deathless' in name.lower():
         return False
+    if name.lower() == 'speedrun' or name.lower() == 'hardcore' or name.lower() == 'hardcore deathless':
+        return True
+
+    #print(name, lbid)
     for j in characters:
         if j.lower() in name.lower():
             return True
     return False
 
 def update():
-    tree = ET.parse(boardfile)
-    root = tree.getroot()
+    downloadIndex()
+    root = getRoot(boardFile)
 
     for i in range(3, len(root)):
         name = root[i][2].text
@@ -62,12 +67,21 @@ def update():
             downloadBoard(lbid, currPath)
             ids = diffingIds(lbid)
             for id in ids:
-                composeMessage(id, name)
+                composeMessage(id, name, False, True)
             if ids:
+                move(lbid)
+            if not os.path.isdir(lastPath + lbid + '.xml'):
                 move(lbid)
 
 
+def getRoot(xmlFile):
+    tree = ET.parse(xmlFile)
+    return tree.getroot()
+
 def move(lbid, path1=currPath, path2=lastPath):
+    if not os.path.isdir(path2):
+        print("creating ", path2)
+        os.mkdir(path2)
     os.rename(path1 + lbid + '.xml', path2 + lbid + '.xml')
 
 
@@ -80,10 +94,12 @@ def postTweet(text):
 
 
 def diffingIds(lbid, path1=currPath, path2=lastPath):
-    tree1 = ET.parse(path1 + lbid + '.xml')
-    root1 = tree1.getroot()
-    tree2 = ET.parse(path2 + lbid + '.xml')
-    root2 = tree2.getroot()
+    root1 = getRoot(path1 + lbid + '.xml')
+
+    if not os.path.isfile(path2 + lbid + '.xml'):
+        print(lbid, "not existing in last")
+        return []
+    root2 = getRoot(path2 + lbid + '.xml')
 
     ids = []
 
@@ -108,7 +124,7 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
     return ids
 
 
-def composeMessage(person, board):
+def composeMessage(person, board, tweet=True, print=True):
     name = steamname(person[0])
     if person[2] != person[3]:
         tmp = ' rose to rank ' + person[2]
@@ -120,17 +136,22 @@ def composeMessage(person, board):
         score = ' with score ' + scoreToProgress(person[1])
     else:
         score = ' with score ' + person[1]
-
-    postTweet(name + tmp + score + ' on ' + board + ' #necrodancer')
-    print(name + tmp + score + ' on ' + board)
+    
+    if tweet:
+        postTweet(name + tmp + score + ' on ' + board + ' #necrodancer')
+    if print:
+        print(name + tmp + score + ' on ' + board)
 
 
 def downloadBoard(lbid, path=basePath, start=1, end=10):
+    if not os.path.isdir(path):
+        print("creating", path)
+        os.mkdir(path)
     leaderboardurl=baseUrl + lbid + '/?xml=1&start=' + str(start) + '&end=' + str(end)
     urllib.request.urlretrieve(leaderboardurl, path + lbid + '.xml')
 
 def downloadIndex():
-    urllib.request.urlretrieve(leaderboardsurl, boardfile)
+    urllib.request.urlretrieve(leaderboardsurl, boardFile)
 
 def steamname(id):
     url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + steamkey + '&steamids=' + id
@@ -144,12 +165,6 @@ def printPlayer(name, rank, score):
     print('name', name)
     print('score', score)
 
-def getLeaderboard(lbid, start, end):
-    downloadBoard(lbid, start, end)
-    tree = ET.parse('/home/hatten/Var/cotn/' + lbid + '.xml')
-    root = tree.getroot()
-    return root
-
 #Extract steamid, score, rank
 def extractEntry(entry):
     return entry[0].text, entry[1].text, entry[2].text
@@ -161,12 +176,13 @@ def getEntryIndex(root):
             index = i
     return index
 
-def printBoard(lbid, start=1, end=10):
-    root = getLeaderboard(lbid, start, end)
+def printBoard(lbid, path=currPath, start=1, end=10):
+    downloadBoard(lbid, currPath, start, end)
+    root = getRoot(path + lbid + '.xml')
     index = getEntryIndex(root)
 
     for entry in root[index]:
-        steamid, score, rank = extractEntry(root1[index][i])
+        steamid, score, rank = extractEntry(entry)
         name = steamname(steamid)
         printPlayer(name, rank, score)
 
@@ -205,8 +221,11 @@ def scoreToTime(score):
 
 #printTop10('695404')
 
-
+if not os.path.isdir(basePath):
+    os.mkdir(basePath)
 
 #postTweet("Hello again")
 update()
+#printBoard('386753', currPath)
+#printBoard('386777', currPath)
 #print(diff('695473'))
