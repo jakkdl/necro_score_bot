@@ -8,9 +8,13 @@ import os
 import os.path
 import time
 
+debug = True
 
+if not debug:
+    basePath = '/home/hatten/Var/cotn/'
+else:
+    basePath = '/home/hatten/Var/cotn_debug/'
 
-basePath = '/home/hatten/Var/cotn/'
 boardFile = basePath + 'leaderboards.xml'
 lastPath = basePath + 'last/'
 currPath = basePath + 'tmp/'
@@ -66,7 +70,7 @@ def update():
             downloadBoard(lbid, currPath)
             ids = diffingIds(lbid)
             for id in ids:
-                composeMessage(id, name, True, True)
+                composeMessage(id, name, not debug, True)
             if ids:
                 move(lbid)
             elif not os.path.isfile(lastPath + lbid + '.xml'):
