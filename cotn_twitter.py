@@ -170,11 +170,10 @@ def extractEntry(entry):
     return entry[0].text, entry[1].text, entry[2].text
 
 def getEntryIndex(root):
-    index = -1
-    for i in range(len(root)):
-        if root[i].tag == 'entries':
-            index = i
-    return index
+    for index, value in enumerate(root):
+        if value.tag == 'entries':
+            return index
+    return -1
 
 def printBoard(lbid, path=currPath, start=1, end=10):
     downloadBoard(lbid, currPath, start, end)
