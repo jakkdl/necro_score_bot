@@ -39,7 +39,10 @@ consumer_secret = readConfig('consumer_secret')
 print('start at: ', time.strftime('%c'))
 
 
-
+def getBoardMax(name):
+    if 'deathless' in name.lower():
+        return 5
+    return 10
 
 
 
@@ -67,7 +70,7 @@ def update():
         name = root[i][2].text
         lbid = root[i][1].text
         if includeBoard(name):
-            downloadBoard(lbid, currPath)
+            downloadBoard(lbid, currPath, 1, getBoardMax(name))
             ids = diffingIds(lbid)
             for id in ids:
                 composeMessage(id, name, not debug, True)
