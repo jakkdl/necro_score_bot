@@ -50,7 +50,6 @@ def includeBoard(name):
     if name.lower() == 'speedrun' or name.lower() == 'hardcore' or name.lower() == 'hardcore deathless':
         return True
 
-    #print(name, lbid)
     for j in characters:
         if j.lower() in name.lower():
             return True
@@ -67,10 +66,10 @@ def update():
             downloadBoard(lbid, currPath)
             ids = diffingIds(lbid)
             for id in ids:
-                composeMessage(id, name, False, True)
+                composeMessage(id, name, True, True)
             if ids:
                 move(lbid)
-            if not os.path.isdir(lastPath + lbid + '.xml'):
+            elif not os.path.isfile(lastPath + lbid + '.xml'):
                 move(lbid)
 
 
@@ -82,6 +81,8 @@ def move(lbid, path1=currPath, path2=lastPath):
     if not os.path.isdir(path2):
         print("creating ", path2)
         os.mkdir(path2)
+    if not os.path.isdir(path1):
+        print("source missing: ", path1)
     os.rename(path1 + lbid + '.xml', path2 + lbid + '.xml')
 
 
@@ -104,12 +105,9 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
     ids = []
 
     #assume entries is at the same index in both files
-    index = -1
-    for i in range(len(root1)):
-        if root1[i].tag == 'entries':
-            index = i
-    for i in range(len(root1[index])):
-        steamid, score, rank = extractEntry(root1[index][i])
+    index = getEntryIndex(root1)
+    for entry in root1[index]:
+        steamid, score, rank = extractEntry(entry)
         found = False
         for entry in root2[index]:
             steamid2, score2, rank2 = extractEntry(entry)
@@ -117,6 +115,7 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
                 found = True
                 if score != score2:
                     ids.append([steamid, score, rank, rank2])
+                break
         if found == False:
             ids.append([steamid, score, rank, -1])
 
@@ -124,7 +123,7 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
     return ids
 
 
-def composeMessage(person, board, tweet=True, print=True):
+def composeMessage(person, board, tweet=True, debug=True):
     name = steamname(person[0])
     if person[2] != person[3]:
         tmp = ' rose to rank ' + person[2]
@@ -139,7 +138,7 @@ def composeMessage(person, board, tweet=True, print=True):
     
     if tweet:
         postTweet(name + tmp + score + ' on ' + board + ' #necrodancer')
-    if print:
+    if debug:
         print(name + tmp + score + ' on ' + board)
 
 
