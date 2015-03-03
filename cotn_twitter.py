@@ -148,22 +148,35 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
 
 def composeMessage(person, board, tweet=True, debug=True):
     name = steamname(person[0])
+    score = person[1]
+    rank = person[2]
+    prevRank = person[3]
     if person[2] != person[3]:
-        tmp = ' rose to rank ' + person[2]
+        inter1 = ' got rank'
+        inter2 = ' on '
+        inter3 = ' with '
     else:
-        tmp = ' still on rank ' + person[2] + ' but now'
+        inter1 = ' on rank '
+        inter2 = ' of '
+        inter3 = ' got '
+
+    
     if 'SPEEDRUN' in board:
-        score = ' with time ' + scoreToTime(person[1])
+        score = 'the time ' + scoreToTime(person[1])
     elif 'DEATHLESS' in board:
         score = scoreToProgress(person[1])
     else:
-        score = ' with score ' + person[1]
+        score = person[1] + ' points'
    
     board = formatBoardName(board)
+
+    tag = ' #necrodancer'
+
+    message = name + inter1 + rank + inter2 + board + inter3 + score + tag
     if tweet:
-        postTweet(name + tmp + score + ' on ' + board + ' #necrodancer')
+        postTweet(message)
     if debug:
-        print(name + tmp + score + ' on ' + board)
+        print(message)
 
 
 def downloadBoard(lbid, path=basePath, start=1, end=10):
@@ -213,7 +226,7 @@ def scoreToProgress(score):
     wins = intscore // 100
     zone = ( intscore // 10 ) % 10 + 1
     level = intscore % 10 + 1
-    return ' with ' + str(wins) + ' wins, dying on ' + str(zone) + '-' + str(level)
+    return str(wins) + ' wins, dying on ' + str(zone) + '-' + str(level)
 
 
 def scoreToTime(score):
