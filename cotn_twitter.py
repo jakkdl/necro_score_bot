@@ -48,6 +48,9 @@ def formatBoardName(name):
     if 'DEATHLESS' in name:
         #Remove hardcore from the name
         name = name.replace('HARDCORE ','')
+    name = name.replace('DOVE', 'Dove')
+    name = name.replace('Pacifist', 'Dove')
+    name = name.replace('All Char', 'All-Char')
     name = name.replace('DEATHLESS', 'Deathless')
     name = name.replace('SPEEDRUN', 'Speed')
     name = name.replace('HARDCORE', 'Score')
