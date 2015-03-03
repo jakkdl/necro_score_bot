@@ -63,13 +63,17 @@ def formatBoardName(name):
 
 
 def includeBoard(name):
-    characters = ['Cadence', 'Melody', 'Aria', 'Dorian', 'Eli', 'Monk', 'Dove', 'Bolt', 'Bard', 'All Chars'] #'Coda'
+    characters = ['Melody', 'Aria', 'Dorian', 'Eli', 'Monk', 'Dove', 'Pacifist', 'Bolt', 'Bard', 'All Chars']
     exclude = ['CO-OP', 'CUSTOM', 'SEEDED', '/']
     for j in exclude:
         if j.lower() in name.lower():
             return False
+    
+    #Don't want the boards 'speedrun deathless'
     if 'speedrun' in name.lower() and 'deathless' in name.lower():
         return False
+    
+    #Cadence doesn't have her name in the board name
     if name.lower() == 'speedrun' or name.lower() == 'hardcore' or name.lower() == 'hardcore deathless':
         return True
 
