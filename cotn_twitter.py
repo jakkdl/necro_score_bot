@@ -146,7 +146,7 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
     return ids
 
 
-def composeMessage(person, board, tweet=True, debug=True):
+def composeMessage(person, board, tweet=False, debug=True):
     name = steamname(person[0])
     score = person[1]
     rank = person[2]
