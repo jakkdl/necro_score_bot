@@ -44,6 +44,20 @@ def getBoardMax(name):
         return 5
     return 10
 
+def formatBoardName(name):
+    if 'DEATHLESS' in name:
+        #Remove hardcore from the name
+        name = name.replace('HARDCORE ','')
+    name = name.replace('DEATHLESS', 'Deathless')
+    name = name.replace('SPEEDRUN', 'Speed')
+    name = name.replace('HARDCORE', 'Score')
+    name = name.split()
+    if len(name) == 2 and 'Deathless' not in name:
+        print("swap")
+        name[0], name[1] = name[1], name[0]
+    if len(name) == 1:
+        name.append('Cadence')
+    return name[0] + ' ' + name[1]
 
 
 def includeBoard(name):
@@ -142,7 +156,8 @@ def composeMessage(person, board, tweet=True, debug=True):
         score = ' with score ' + scoreToProgress(person[1])
     else:
         score = ' with score ' + person[1]
-    
+   
+    board = formatBoardName(board)
     if tweet:
         postTweet(name + tmp + score + ' on ' + board + ' #necrodancer')
     if debug:
