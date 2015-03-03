@@ -56,7 +56,6 @@ def formatBoardName(name):
     name = name.replace('HARDCORE', 'Score')
     name = name.split()
     if len(name) == 2 and 'Deathless' not in name:
-        print("swap")
         name[0], name[1] = name[1], name[0]
     if len(name) == 1:
         name.append('Cadence')
@@ -156,7 +155,7 @@ def composeMessage(person, board, tweet=True, debug=True):
     if 'SPEEDRUN' in board:
         score = ' with time ' + scoreToTime(person[1])
     elif 'DEATHLESS' in board:
-        score = ' with score ' + scoreToProgress(person[1])
+        score = scoreToProgress(person[1])
     else:
         score = ' with score ' + person[1]
    
@@ -214,7 +213,7 @@ def scoreToProgress(score):
     wins = intscore // 100
     zone = ( intscore // 10 ) % 10 + 1
     level = intscore % 10 + 1
-    return str(wins) + '-' + str(zone) + '-' + str(level)
+    return ' with ' + str(wins) + ' wins, dying on ' + str(zone) + '-' + str(level)
 
 
 def scoreToTime(score):
