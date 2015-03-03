@@ -63,7 +63,7 @@ def formatBoardName(name):
 
 
 def includeBoard(name):
-    characters = ['Cadence', 'Melody', 'Aria', 'Dorian', 'Eli', 'Monk', 'Dove', 'Bolt', 'Bard', 'All Chars'] #'Coda'
+    characters = ['Cadence', 'Melody', 'Aria', 'Dorian', 'Eli', 'Monk', 'Dove', 'Bolt', 'Bard', 'All Chars', 'Pacifist'] #'Coda'
     exclude = ['CO-OP', 'CUSTOM', 'SEEDED', '/']
     for j in exclude:
         if j.lower() in name.lower():
