@@ -8,7 +8,7 @@ import os
 import os.path
 import time
 
-debug = False
+debug = True
 
 if not debug:
     basePath = '/home/hatten/Var/cotn/'
