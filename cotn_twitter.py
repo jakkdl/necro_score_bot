@@ -58,18 +58,23 @@ def formatBoardName(name):
     if len(name) == 2 and 'Deathless' not in name:
         name[0], name[1] = name[1], name[0]
     if len(name) == 1:
-        name.append('Cadence')
+        name.append(name[0])
+        name[0] = 'Cadence'
     return name[0] + ' ' + name[1]
 
 
 def includeBoard(name):
-    characters = ['Cadence', 'Melody', 'Aria', 'Dorian', 'Eli', 'Monk', 'Dove', 'Bolt', 'Bard', 'All Chars', 'Pacifist'] #'Coda'
+    characters = ['Melody', 'Aria', 'Dorian', 'Eli', 'Monk', 'Dove', 'Pacifist', 'Bolt', 'Bard', 'All Chars']
     exclude = ['CO-OP', 'CUSTOM', 'SEEDED', '/']
     for j in exclude:
         if j.lower() in name.lower():
             return False
+    
+    #Don't want the boards 'speedrun deathless'
     if 'speedrun' in name.lower() and 'deathless' in name.lower():
         return False
+    
+    #Cadence doesn't have her name in the board name
     if name.lower() == 'speedrun' or name.lower() == 'hardcore' or name.lower() == 'hardcore deathless':
         return True
 
@@ -86,8 +91,9 @@ def update():
         name = root[i][2].text
         lbid = root[i][1].text
         if includeBoard(name):
-            downloadBoard(lbid, currPath, 1, getBoardMax(name))
-            ids = diffingIds(lbid)
+            maxIndex = getBoardMax(name)
+            downloadBoard(lbid, currPath, 1, 100)
+            ids = diffingIds(lbid, maxIndex)
             for id in ids:
                 composeMessage(id, name, not debug, True)
             if ids:
@@ -117,7 +123,7 @@ def postTweet(text):
     t.statuses.update(status=text)
 
 
-def diffingIds(lbid, path1=currPath, path2=lastPath):
+def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
     root1 = getRoot(path1 + lbid + '.xml')
 
     if not os.path.isfile(path2 + lbid + '.xml'):
@@ -129,7 +135,9 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
 
     #assume entries is at the same index in both files
     index = getEntryIndex(root1)
-    for entry in root1[index]:
+    for i in range(len(root1[index])):
+        entry = root1[index][i]
+    #for entry in root1[index]:
         steamid, score, rank = extractEntry(entry)
         found = False
         for entry in root2[index]:
@@ -137,33 +145,69 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
             if steamid == steamid2:
                 found = True
                 if score != score2:
-                    ids.append([steamid, score, rank, rank2])
+                    ids.append([steamid, score, score2, rank, rank2])
                 break
         if found == False:
-            ids.append([steamid, score, rank, -1])
+            ids.append([steamid, score, -1, rank, -1])
 
 
     return ids
 
+def nth(i):
+    if i == 1:
+        return 'st'
+    elif i == 2:
+        return 'nd'
+    elif i == 3:
+        return 'rd'
+    return 'th'
 
-def composeMessage(person, board, tweet=True, debug=True):
+def composeMessage(person, board, tweet=False, debug=True):
     name = steamname(person[0])
-    if person[2] != person[3]:
-        tmp = ' rose to rank ' + person[2]
-    else:
-        tmp = ' still on rank ' + person[2] + ' but now'
-    if 'SPEEDRUN' in board:
-        score = ' with time ' + scoreToTime(person[1])
-    elif 'DEATHLESS' in board:
-        score = scoreToProgress(person[1])
-    else:
-        score = ' with score ' + person[1]
-   
+    score = person[1]
+    prevScore = person[2]
+    rank = person[3]
+    prevRank = person[4]
     board = formatBoardName(board)
+    url = boardToUrl(board)
+
+    if 'Speed' in board:
+        relScore = relativeTime(score, prevScore)
+        strScore = scoreToTime(score) + ' ' + relScore
+    elif 'Deathless' in board:
+        relScore = relativeProgress(score, prevScore)
+        strScore = formatProgress(score) + ' ' + relScore
+    else:
+        relScore = relativeScore(score, prevScore)
+        strScore = str(score) + ' ' + relScore + ' gold'
+
+
+    if rank != prevRank:
+        inter1 = ' claims rank '
+        inter2 = ' ' + relativeRank(rank, prevRank) + ' in '
+        inter3 = ' with '
+    else:
+        inter1 = ', '
+        inter2 = nth(rank) + ' in '
+        inter3 = ', improves '
+        relRank = ''
+        if 'Score' in board:
+            inter3 += 'to '
+        elif 'Speed' in board:
+            inter3 += 'time to '
+        elif 'Deathless' in board:
+            inter3 += 'streak to '
+
+    
+   
+
+    tag = ' #necrodancer'
+
+    message = name + inter1 + str(rank) + inter2 + board + inter3 + strScore + ' ' + url + tag
     if tweet:
-        postTweet(name + tmp + score + ' on ' + board + ' #necrodancer')
+        postTweet(message)
     if debug:
-        print(name + tmp + score + ' on ' + board)
+        print(message)
 
 
 def downloadBoard(lbid, path=basePath, start=1, end=10):
@@ -177,6 +221,7 @@ def downloadIndex():
     urllib.request.urlretrieve(leaderboardsurl, boardFile)
 
 def steamname(id):
+    id = str(id)
     url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + steamkey + '&steamids=' + id
     response = urllib.request.urlopen(url)
     reader = codecs.getreader('utf-8')
@@ -190,7 +235,7 @@ def printPlayer(name, rank, score):
 
 #Extract steamid, score, rank
 def extractEntry(entry):
-    return entry[0].text, entry[1].text, entry[2].text
+    return int(entry[0].text), int(entry[1].text), int(entry[2].text)
 
 def getEntryIndex(root):
     for index, value in enumerate(root):
@@ -209,16 +254,30 @@ def printBoard(lbid, path=currPath, start=1, end=10):
         printPlayer(name, rank, score)
 
 def scoreToProgress(score):
-    intscore = int(score)
-    wins = intscore // 100
-    zone = ( intscore // 10 ) % 10 + 1
-    level = intscore % 10 + 1
-    return ' with ' + str(wins) + ' wins, dying on ' + str(zone) + '-' + str(level)
+    wins = score // 100
+    zone = ( score // 10 ) % 10 + 1
+    level = score % 10 + 1
+    return wins, zone, level
 
+def formatProgress(score):
+    wins, zone, level = scoreToProgress(score)
+    return str(wins) + ' wins, dying on ' + str(zone) + '-' + str(level)
+
+def relativeProgress(score, prevScore):
+    print(score, prevScore)
+    if prevScore == -1:
+        return ''
+    wins, zone, level = scoreToProgress(score - prevScore)
+    if wins == 0 and zone == 0 and level == 0:
+        return ''
+    return '(+' + str(wins) + '-' + str(zone-1) + '-' + str(level-1) + ')'
+
+def invertTime(time):
+    return 100000000 - time
 
 def scoreToTime(score):
-    copy = 100000000 - int(score)
-    msec = copy % 1000
+    copy = invertTime(score)
+    msec = (copy % 1000) // 10 #only want precision of 2
     copy //= 1000
     sec = copy % 60
     copy //= 60
@@ -235,8 +294,36 @@ def scoreToTime(score):
     if min != 0 or mfill == 2:
         result += str(min).zfill(mfill) + ":"
         sfill=2
-    result += str(sec).zfill(sfill) + "." + str(msec).zfill(3)
+    result += str(sec).zfill(sfill) + "." + str(msec).zfill(2)
     return result
+
+def boardToUrl(board):
+    board = board.replace('All-Chars', 'All')
+    board = board.split()
+    return 'http://crypt.toofz.com/Leaderboards/' + board[0] + '/' + board[1]
+
+
+def relativeRank(rank, prevRank):
+    if prevRank == -1 or rank == prevRank:
+        return ''
+    return '(+' + str(prevRank - rank) + ')'
+
+def relativeTime(time, prevTime):
+    if prevTime == -1 or time == prevTime:
+        return ''
+    realTime = invertTime(time)
+    realPrev = invertTime(prevTime)
+    realPrev = realTime + 1000
+    relTime = realPrev - realTime
+    invertRelTime = invertTime(relTime)
+    return '(-' + scoreToTime(invertRelTime) + ')'
+
+def relativeScore(score, prevScore):
+    sum = score - prevScore
+    if sum == 0 or prevScore == -1:
+        return ''
+    return '(+' + str(sum) + ')'
+
 
 #leaderboardurl='http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
 
