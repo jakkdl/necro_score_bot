@@ -58,7 +58,8 @@ def formatBoardName(name):
     if len(name) == 2 and 'Deathless' not in name:
         name[0], name[1] = name[1], name[0]
     if len(name) == 1:
-        name.append('Cadence')
+        name.append(name[0])
+        name[0] = 'Cadence'
     return name[0] + ' ' + name[1]
 
 
@@ -135,6 +136,8 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
     index = getEntryIndex(root1)
     for entry in root1[index]:
         steamid, score, rank = extractEntry(entry)
+        ids.append([steamid, score, rank, rank])
+        break
         found = False
         for entry in root2[index]:
             steamid2, score2, rank2 = extractEntry(entry)
@@ -149,34 +152,50 @@ def diffingIds(lbid, path1=currPath, path2=lastPath):
 
     return ids
 
+def nth(i):
+    if i == '1':
+        return 'st'
+    elif i == '2':
+        return 'nd'
+    elif i == '3':
+        return 'rd'
+    return 'th'
 
 def composeMessage(person, board, tweet=False, debug=True):
     name = steamname(person[0])
     score = person[1]
     rank = person[2]
     prevRank = person[3]
-    if person[2] != person[3]:
-        inter1 = ' got rank'
-        inter2 = ' on '
+    board = formatBoardName(board)
+    url = boardToUrl(board)
+
+    if rank != prevRank:
+        inter1 = ' claims rank '
+        inter2 = ' in '
         inter3 = ' with '
     else:
-        inter1 = ' on rank '
-        inter2 = ' of '
-        inter3 = ' got '
+        inter1 = ', '
+        inter2 = nth(rank) + ' in '
+        inter3 = ', improves '
+        if 'Score' in board:
+            inter3 += 'to '
+        elif 'Speed' in board:
+            inter3 += 'time to '
+        elif 'Deathless' in board:
+            inter3 += 'streak to '
 
     
-    if 'SPEEDRUN' in board:
-        score = 'the time ' + scoreToTime(person[1])
-    elif 'DEATHLESS' in board:
+    if 'Speed' in board:
+        score = scoreToTime(person[1])
+    elif 'Deathless' in board:
         score = scoreToProgress(person[1])
     else:
-        score = person[1] + ' points'
+        score = person[1] + ' gold'
    
-    board = formatBoardName(board)
 
     tag = ' #necrodancer'
 
-    message = name + inter1 + rank + inter2 + board + inter3 + score + tag
+    message = name + inter1 + rank + inter2 + board + inter3 + score + ' ' + url + tag
     if tweet:
         postTweet(message)
     if debug:
@@ -235,7 +254,7 @@ def scoreToProgress(score):
 
 def scoreToTime(score):
     copy = 100000000 - int(score)
-    msec = copy % 1000
+    msec = (copy % 1000) // 10 #only want precision of 2
     copy //= 1000
     sec = copy % 60
     copy //= 60
@@ -252,9 +271,13 @@ def scoreToTime(score):
     if min != 0 or mfill == 2:
         result += str(min).zfill(mfill) + ":"
         sfill=2
-    result += str(sec).zfill(sfill) + "." + str(msec).zfill(3)
+    result += str(sec).zfill(sfill) + "." + str(msec).zfill(2)
     return result
 
+def boardToUrl(board):
+    board = board.replace('All-Chars', 'All')
+    board = board.split()
+    return 'http://crypt.toofz.com/Leaderboards/' + board[0] + '/' + board[1]
 #leaderboardurl='http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
 
 
