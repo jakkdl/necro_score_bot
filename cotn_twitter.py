@@ -135,7 +135,7 @@ def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
 
     #assume entries is at the same index in both files
     index = getEntryIndex(root1)
-    for i in range(1, min(maxIndex+1, len(root1[index]))):
+    for i in range(0, min(maxIndex, len(root1[index]))):
         entry = root1[index][i]
     #for entry in root1[index]:
         steamid, score, rank = extractEntry(entry)
@@ -264,7 +264,7 @@ def formatProgress(score):
     return str(wins) + ' wins, dying on ' + str(zone) + '-' + str(level)
 
 def relativeProgress(score, prevScore):
-    print(score, prevScore)
+    #print(score, prevScore)
     if prevScore == -1:
         return ''
     wins, zone, level = scoreToProgress(score - prevScore)
