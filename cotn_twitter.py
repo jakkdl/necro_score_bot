@@ -313,7 +313,6 @@ def relativeTime(time, prevTime):
         return ''
     realTime = invertTime(time)
     realPrev = invertTime(prevTime)
-    realPrev = realTime + 1000
     relTime = realPrev - realTime
     invertRelTime = invertTime(relTime)
     return '(-' + scoreToTime(invertRelTime) + ')'
