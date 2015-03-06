@@ -96,10 +96,7 @@ def update():
             ids = diffingIds(lbid, maxIndex)
             for id in ids:
                 composeMessage(id, name, not debug, True)
-            if ids:
-                move(lbid)
-            elif not os.path.isfile(lastPath + lbid + '.xml'):
-                move(lbid)
+            move(lbid)
 
 
 def getRoot(xmlFile):
