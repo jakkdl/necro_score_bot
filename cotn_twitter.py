@@ -7,6 +7,7 @@ import twitter
 import os
 import os.path
 import time
+import sys
 
 debug = False
 
@@ -170,18 +171,18 @@ def composeMessage(person, board, tweet=False, debug=True):
 
     if 'Speed' in board:
         relScore = relativeTime(score, prevScore)
-        strScore = scoreToTime(score) + ' ' + relScore
+        strScore = scoreToTime(score) + relScore
     elif 'Deathless' in board:
         relScore = relativeProgress(score, prevScore)
-        strScore = formatProgress(score) + ' ' + relScore
+        strScore = formatProgress(score) + relScore
     else:
         relScore = relativeScore(score, prevScore)
-        strScore = str(score) + ' ' + relScore + ' gold'
+        strScore = str(score) + relScore + ' gold'
 
 
     if rank != prevRank:
         inter1 = ' claims rank '
-        inter2 = ' ' + relativeRank(rank, prevRank) + ' in '
+        inter2 = relativeRank(rank, prevRank) + ' in '
         inter3 = ' with '
     else:
         inter1 = ', '
@@ -212,7 +213,20 @@ def downloadBoard(lbid, path=basePath, start=1, end=10):
         print("creating", path)
         os.mkdir(path)
     leaderboardurl=baseUrl + lbid + '/?xml=1&start=' + str(start) + '&end=' + str(end)
-    urllib.request.urlretrieve(leaderboardurl, path + lbid + '.xml')
+    tries = 10
+    while True:
+        try:
+            urllib.request.urlretrieve(leaderboardurl, path + lbid + '.xml')
+            break
+        except (urllib.error.HTTPError, urllib.error.URLError) as e:
+            tries = tries-1
+            Print("Catched", e, "trying", str(tries), "more times in 5 seconds")
+            sleep(5)
+            if tries == 0:
+                raise LookupError('Failed to fetch leaderboard')
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+            raise LookupError('Failed to fetch leaderboard')
 
 def downloadIndex():
     urllib.request.urlretrieve(leaderboardsurl, boardFile)
@@ -244,7 +258,6 @@ def printBoard(lbid, path=currPath, start=1, end=10):
     downloadBoard(lbid, currPath, start, end)
     root = getRoot(path + lbid + '.xml')
     index = getEntryIndex(root)
-
     for entry in root[index]:
         steamid, score, rank = extractEntry(entry)
         name = steamname(steamid)
@@ -262,12 +275,10 @@ def formatProgress(score):
 
 def relativeProgress(score, prevScore):
     #print(score, prevScore)
-    if prevScore == -1:
+    if prevScore == -1 or score - prevScore == 0:
         return ''
-    wins, zone, level = scoreToProgress(score - prevScore)
-    if wins == 0 and zone == 0 and level == 0:
-        return ''
-    return '(+' + str(wins) + '-' + str(zone-1) + '-' + str(level-1) + ')'
+    wins, zone, level = scoreToProgress(prevScore)
+    return ' (up from ' + str(wins) + '-' + str(zone-1) + '-' + str(level-1) + ')'
 
 def invertTime(time):
     return 100000000 - time
@@ -303,7 +314,7 @@ def boardToUrl(board):
 def relativeRank(rank, prevRank):
     if prevRank == -1 or rank == prevRank:
         return ''
-    return '(+' + str(prevRank - rank) + ')'
+    return ' (+' + str(prevRank - rank) + ')'
 
 def relativeTime(time, prevTime):
     if prevTime == -1 or time == prevTime:
@@ -312,13 +323,13 @@ def relativeTime(time, prevTime):
     realPrev = invertTime(prevTime)
     relTime = realPrev - realTime
     invertRelTime = invertTime(relTime)
-    return '(-' + scoreToTime(invertRelTime) + ')'
+    return ' (-' + scoreToTime(invertRelTime) + ')'
 
 def relativeScore(score, prevScore):
     sum = score - prevScore
     if sum == 0 or prevScore == -1:
         return ''
-    return '(+' + str(sum) + ')'
+    return ' (+' + str(sum) + ')'
 
 
 #leaderboardurl='http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
