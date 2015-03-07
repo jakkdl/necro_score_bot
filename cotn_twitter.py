@@ -43,6 +43,8 @@ print('start at: ', time.strftime('%c'))
 def getBoardMax(name):
     if 'deathless' in name.lower():
         return 5
+    if 'seeded' in name.lower():
+        return 3
     return 10
 
 def formatBoardName(name):
@@ -65,8 +67,8 @@ def formatBoardName(name):
 
 
 def includeBoard(name):
-    characters = ['Melody', 'Aria', 'Dorian', 'Eli', 'Monk', 'Dove', 'Pacifist', 'Bolt', 'Bard', 'All Chars']
-    exclude = ['CO-OP', 'CUSTOM', 'SEEDED', '/']
+    modes = ['hardcore', 'speedrun', 'deathless']
+    exclude = ['CO-OP', 'CUSTOM', '/', 'Pacifist', 'Thief', 'Ghost', 'Coda', 'seeded']
     for j in exclude:
         if j.lower() in name.lower():
             return False
@@ -75,13 +77,10 @@ def includeBoard(name):
     if 'speedrun' in name.lower() and 'deathless' in name.lower():
         return False
     
-    #Cadence doesn't have her name in the board name
-    if name.lower() == 'speedrun' or name.lower() == 'hardcore' or name.lower() == 'hardcore deathless':
-        return True
-
-    for j in characters:
-        if j.lower() in name.lower():
+    for i in modes:
+        if i in name.lower():
             return True
+    
     return False
 
 def update():
