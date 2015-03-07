@@ -7,6 +7,7 @@ import twitter
 import os
 import os.path
 import time
+import sys
 
 debug = True
 
@@ -212,7 +213,20 @@ def downloadBoard(lbid, path=basePath, start=1, end=10):
         print("creating", path)
         os.mkdir(path)
     leaderboardurl=baseUrl + lbid + '/?xml=1&start=' + str(start) + '&end=' + str(end)
-    urllib.request.urlretrieve(leaderboardurl, path + lbid + '.xml')
+    tries = 10
+    while True:
+        try:
+            urllib.request.urlretrieve(leaderboardurl, path + lbid + '.xml')
+            break
+        except (urllib.error.HTTPError, urllib.error.URLError) as e:
+            tries = tries-1
+            Print("Catched", e, "trying", str(tries), "more times in 5 seconds")
+            sleep(5)
+            if tries == 0:
+                raise LookupError('Failed to fetch leaderboard')
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+            raise LookupError('Failed to fetch leaderboard')
 
 def downloadIndex():
     urllib.request.urlretrieve(leaderboardsurl, boardFile)
