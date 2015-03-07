@@ -43,6 +43,8 @@ print('start at: ', time.strftime('%c'))
 def getBoardMax(name):
     if 'deathless' in name.lower():
         return 5
+    if 'seeded' in name.lower():
+        return 3
     return 10
 
 def formatBoardName(name):
@@ -65,8 +67,8 @@ def formatBoardName(name):
 
 
 def includeBoard(name):
-    characters = ['Melody', 'Aria', 'Dorian', 'Eli', 'Monk', 'Dove', 'Pacifist', 'Bolt', 'Bard', 'All Chars']
-    exclude = ['CO-OP', 'CUSTOM', 'SEEDED', '/']
+    modes = ['hardcore', 'speedrun', 'deathless']
+    exclude = ['CO-OP', 'CUSTOM', '/', 'Pacifist', 'Thief', 'Ghost', 'Coda', 'seeded']
     for j in exclude:
         if j.lower() in name.lower():
             return False
@@ -75,13 +77,10 @@ def includeBoard(name):
     if 'speedrun' in name.lower() and 'deathless' in name.lower():
         return False
     
-    #Cadence doesn't have her name in the board name
-    if name.lower() == 'speedrun' or name.lower() == 'hardcore' or name.lower() == 'hardcore deathless':
-        return True
-
-    for j in characters:
-        if j.lower() in name.lower():
+    for i in modes:
+        if i in name.lower():
             return True
+    
     return False
 
 def update():
@@ -111,6 +110,28 @@ def move(lbid, path1=currPath, path2=lastPath):
     if not os.path.isdir(path1):
         print("source missing: ", path1)
     os.rename(path1 + lbid + '.xml', path2 + lbid + '.xml')
+
+
+def getTwitterHandle(id):
+    url = 'http://steamcommunity.com/profiles/' + str(id)
+    response = urllib.request.urlopen(url)
+    data = response.read()
+    text = data.decode('utf-8')
+    if 'twitter' not in text:
+        return None
+    start = text.find('twitter')+13
+    end = text.find('\\', start, start+16)
+    handle = text[start:end]
+    MY_TWITTER_CREDS = os.path.expanduser(configPath + 'twitter_credentials')
+    oauth_token, oauth_secret = twitter.read_token_file(MY_TWITTER_CREDS)
+    t = twitter.Twitter(auth=twitter.OAuth(
+        oauth_token, oauth_secret, consumer_key, consumer_secret))
+    try:
+        t.users.show(screen_name=handle)
+        return handle
+    except:
+        print(handle, "in steam profile but not valid")
+        return None
 
 
 def postTweet(text):
@@ -161,11 +182,12 @@ def nth(i):
     return 'th'
 
 def composeMessage(person, board, tweet=False, debug=True):
-    name = steamname(person[0])
+    steamid = person[0]
     score = person[1]
     prevScore = person[2]
     rank = person[3]
     prevRank = person[4]
+    name = steamname(steamid)
     board = formatBoardName(board)
     url = boardToUrl(board)
 
@@ -200,6 +222,9 @@ def composeMessage(person, board, tweet=False, debug=True):
    
 
     tag = ' #necrodancer'
+    twitterName = getTwitterHandle(steamid)
+    if twitterName:
+        name = '@' + twitterName
 
     message = name + inter1 + str(rank) + inter2 + board + inter3 + strScore + ' ' + url + tag
     if tweet:
@@ -342,6 +367,8 @@ if not os.path.isdir(basePath):
 
 #postTweet("Hello again")
 update()
+#print(getTwitterHandle('76561198074553183'))
+#print(getTwitterHandle('76561197975956199'))
 #printBoard('386753', currPath)
 #printBoard('386777', currPath)
 #print(diff('695473'))
