@@ -170,18 +170,18 @@ def composeMessage(person, board, tweet=False, debug=True):
 
     if 'Speed' in board:
         relScore = relativeTime(score, prevScore)
-        strScore = scoreToTime(score) + ' ' + relScore
+        strScore = scoreToTime(score) + relScore
     elif 'Deathless' in board:
         relScore = relativeProgress(score, prevScore)
-        strScore = formatProgress(score) + ' ' + relScore
+        strScore = formatProgress(score) + relScore
     else:
         relScore = relativeScore(score, prevScore)
-        strScore = str(score) + ' ' + relScore + ' gold'
+        strScore = str(score) + relScore + ' gold'
 
 
     if rank != prevRank:
         inter1 = ' claims rank '
-        inter2 = ' ' + relativeRank(rank, prevRank) + ' in '
+        inter2 = relativeRank(rank, prevRank) + ' in '
         inter3 = ' with '
     else:
         inter1 = ', '
@@ -267,7 +267,7 @@ def relativeProgress(score, prevScore):
     wins, zone, level = scoreToProgress(score - prevScore)
     if wins == 0 and zone == 0 and level == 0:
         return ''
-    return '(+' + str(wins) + '-' + str(zone-1) + '-' + str(level-1) + ')'
+    return ' (+' + str(wins) + '-' + str(zone-1) + '-' + str(level-1) + ')'
 
 def invertTime(time):
     return 100000000 - time
@@ -303,7 +303,7 @@ def boardToUrl(board):
 def relativeRank(rank, prevRank):
     if prevRank == -1 or rank == prevRank:
         return ''
-    return '(+' + str(prevRank - rank) + ')'
+    return ' (+' + str(prevRank - rank) + ')'
 
 def relativeTime(time, prevTime):
     if prevTime == -1 or time == prevTime:
@@ -312,13 +312,13 @@ def relativeTime(time, prevTime):
     realPrev = invertTime(prevTime)
     relTime = realPrev - realTime
     invertRelTime = invertTime(relTime)
-    return '(-' + scoreToTime(invertRelTime) + ')'
+    return ' (-' + scoreToTime(invertRelTime) + ')'
 
 def relativeScore(score, prevScore):
     sum = score - prevScore
     if sum == 0 or prevScore == -1:
         return ''
-    return '(+' + str(sum) + ')'
+    return ' (+' + str(sum) + ')'
 
 
 #leaderboardurl='http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
