@@ -244,7 +244,6 @@ def printBoard(lbid, path=currPath, start=1, end=10):
     downloadBoard(lbid, currPath, start, end)
     root = getRoot(path + lbid + '.xml')
     index = getEntryIndex(root)
-
     for entry in root[index]:
         steamid, score, rank = extractEntry(entry)
         name = steamname(steamid)
@@ -262,12 +261,10 @@ def formatProgress(score):
 
 def relativeProgress(score, prevScore):
     #print(score, prevScore)
-    if prevScore == -1:
+    if prevScore == -1 or score - prevScore == 0:
         return ''
-    wins, zone, level = scoreToProgress(score - prevScore)
-    if wins == 0 and zone == 0 and level == 0:
-        return ''
-    return ' (+' + str(wins) + '-' + str(zone-1) + '-' + str(level-1) + ')'
+    wins, zone, level = scoreToProgress(prevScore)
+    return ' (up from ' + str(wins) + '-' + str(zone-1) + '-' + str(level-1) + ')'
 
 def invertTime(time):
     return 100000000 - time
