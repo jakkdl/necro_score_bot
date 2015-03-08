@@ -224,7 +224,7 @@ def composeMessage(person, board, tweet=False, debug=True):
     tag = ' #necrodancer'
     twitterName = getTwitterHandle(steamid)
     if twitterName:
-        name = '@' + twitterName
+        name = '.@' + twitterName
 
     message = name + inter1 + str(rank) + inter2 + board + inter3 + strScore + ' ' + url + tag
     if tweet:
@@ -369,6 +369,9 @@ if not os.path.isdir(basePath):
 update()
 #print(getTwitterHandle('76561198074553183'))
 #print(getTwitterHandle('76561197975956199'))
+#rat
+#print(getTwitterHandle(76561198089674311))
+#print(getTwitterHandle(76561197998362244))
 #printBoard('386753', currPath)
-#printBoard('386777', currPath)
+#printBoard('386753', currPath)
 #print(diff('695473'))
