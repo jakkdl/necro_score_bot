@@ -369,6 +369,9 @@ if not os.path.isdir(basePath):
 update()
 #print(getTwitterHandle('76561198074553183'))
 #print(getTwitterHandle('76561197975956199'))
+#rat
+#print(getTwitterHandle(76561198089674311))
+#print(getTwitterHandle(76561197998362244))
 #printBoard('386753', currPath)
-#printBoard('386777', currPath)
+#printBoard('386753', currPath)
 #print(diff('695473'))
