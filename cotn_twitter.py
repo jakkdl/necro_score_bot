@@ -224,7 +224,7 @@ def composeMessage(person, board, tweet=False, debug=True):
     tag = ' #necrodancer'
     twitterName = getTwitterHandle(steamid)
     if twitterName:
-        name = '@' + twitterName
+        name = '.@' + twitterName
 
     message = name + inter1 + str(rank) + inter2 + board + inter3 + strScore + ' ' + url + tag
     if tweet:
