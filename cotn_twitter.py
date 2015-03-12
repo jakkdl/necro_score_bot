@@ -117,16 +117,16 @@ def getRoot(xmlFile):
 
 def move(lbid, path1=currPath, path2=lastPath):
     if not os.path.isdir(path2):
-        print("creating ", path2)
+        print('creating ', path2)
         os.mkdir(path2)
     if not os.path.isdir(path1):
-        print("source missing: ", path1)
+        print('source missing: ', path1)
     os.rename(path1 + lbid + '.xml', path2 + lbid + '.xml')
 
 def getTwitterHandle(id):
     url = 'http://steamcommunity.com/profiles/' + str(id)
     time.sleep(1)
-    response = urllib.request.urlopen(url) #handle exceptions
+    response =fetchUrl(url)
     data = response.read()
     text = data.decode('utf-8')
 
@@ -134,15 +134,34 @@ def getTwitterHandle(id):
     if match is None:
         return match
     else:
-        handle = match.group("handle")
+        handle = match.group('handle')
 
     try:
         TWITTER_AGENT.users.show(screen_name=handle)
         return handle
     except:
-        print(handle, "in steam profile but not valid")
+        print(handle, 'in steam profile but not valid')
         return None
 
+
+def fetchUrl(url, path=None):
+    tries = 10
+    while True:
+        try:
+            if path:
+                urllib.request.urlretrieve(url, path)
+            else:
+                return urllib.request.urlopen(url)
+            break
+        except (urllib.error.HTTPError, urllib.error.URLError) as e:
+            tries = tries-1
+            print('Catched', e, 'fetching', url, 'trying', tries, 'more times in 5 seconds')
+            time.sleep(5)
+            if tries == 0:
+                raise LookupError('Failed to fetch', url)
+        except:
+            print('Unexpected error:', sys.exc_info()[0])
+            raise LookupError('Failed to fetch leaderboard')
 
 def postTweet(text):
     TWITTER_AGENT.statuses.update(status=text)
@@ -152,7 +171,7 @@ def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
     root1 = getRoot(path1 + lbid + '.xml')
 
     if not os.path.isfile(path2 + lbid + '.xml'):
-        print(lbid, "not existing in last")
+        print(lbid, 'not existing in last')
         return []
     root2 = getRoot(path2 + lbid + '.xml')
 
@@ -248,30 +267,18 @@ def composeMessage(person, board, tweet=False, debug=True):
 
 def downloadBoard(lbid, path=basePath, start=1, end=10):
     if not os.path.isdir(path):
-        print("creating", path)
+        print('creating', path)
         os.mkdir(path)
     leaderboardurl=baseUrl + lbid + '/?xml=1&start=%d&end=%d'%(start, end)
-    tries = 10
-    while True:
-        try:
-            urllib.request.urlretrieve(leaderboardurl, path + lbid + '.xml')
-            break
-        except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            tries = tries-1
-            print("Catched", e, "trying", str(tries), "more times in 5 seconds")
-            time.sleep(5)
-            if tries == 0:
-                raise LookupError('Failed to fetch leaderboard')
-        except:
-            print("Unexpected error:", sys.exc_info()[0])
-            raise LookupError('Failed to fetch leaderboard')
+    fetchUrl(leaderboardurl, path + lbid + '.xml')
+
 
 def downloadIndex():
-    urllib.request.urlretrieve(leaderboardsurl, boardFile)
+    fetchUrl(leaderboardsurl, boardFile)
 
 def steamname(steam_id):
     url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%d'%(STEAMKEY, steam_id)
-    response = urllib.request.urlopen(url)
+    response = fetchUrl(url)
     reader = codecs.getreader('utf-8')
     obj = json.load(reader(response))
     return obj['response']['players'][0]['personaname']
@@ -335,14 +342,14 @@ def formatTime(milliseconds):
 
     result = ''
 
-    minutePad="%d:"
+    minutePad='%d:'
     if hours:
-        result += "%d:"%(hours)
-        minutePad="%02d:"
+        result += '%d:'%(hours)
+        minutePad='%02d:'
     if minutes or hours:
-        result += pad%(minutes)
+        result += minutePad%(minutes)
 
-    result += "%02d.%02d"%(seconds, milliseconds)
+    result += '%02d.%02d'%(seconds, milliseconds)
 
     return result
 
@@ -382,7 +389,7 @@ if not os.path.isdir(basePath):
     os.mkdir(basePath)
 
 
-#postTweet("Hello again")
+#postTweet('Hello again')
 update()
 #print(getTwitterHandle('76561198074553183'))
 #print(getTwitterHandle('76561197975956199'))
@@ -391,4 +398,4 @@ update()
 #print(getTwitterHandle(76561197998362244))
 #printBoard('470749', currPath)
 #printBoard('386753', currPath)
-#print(diff('695473'))
+#prit(diff('695473'))
