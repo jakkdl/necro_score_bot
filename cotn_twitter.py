@@ -3,12 +3,12 @@ import urllib.request
 import xml.etree.ElementTree as ET
 import json
 import codecs
-import twitter
 import re
 import os
 import os.path
 import time
 import sys
+from nsb_twitter import *
 
 debug = True
 overWriteOld = False
@@ -21,13 +21,16 @@ else:
 boardFile = basePath + 'leaderboards.xml'
 lastPath = basePath + 'last/'
 currPath = basePath + 'tmp/'
-configPath = '/home/hatten/.config/cotn/'
+configPath = '~/.config/cotn/'
 
 baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
+
+twitit = twit(os.path.expanduser(configPath + 'twitter/'))
+
 def readConfig(file):
-    f = open(configPath + file)
+    f = open(os.path.expanduser(configPath + file))
     result = f.read()
     f.close()
     return result.rstrip()
@@ -35,16 +38,6 @@ def readConfig(file):
 
 STEAMKEY = readConfig('steamkey')
 
-def initTwitterAgent():
-    my_twitter_credentials = os.path.expanduser(configPath + 'twitter_credentials')
-
-    consumer_key = readConfig('consumer_key')
-    consumer_secret = readConfig('consumer_secret')
-    oauth_token, oauth_secret = twitter.read_token_file(my_twitter_credentials)
-
-    return twitter.Twitter(auth=twitter.OAuth(
-        oauth_token, oauth_secret, consumer_key, consumer_secret))
-TWITTER_AGENT = initTwitterAgent()
 
 
 print('start at: ', time.strftime('%c'))
@@ -125,7 +118,6 @@ def move(lbid, path1=currPath, path2=lastPath):
 
 def getTwitterHandle(id):
     url = 'http://steamcommunity.com/profiles/' + str(id)
-    time.sleep(1)
     response =fetchUrl(url)
     data = response.read()
     text = data.decode('utf-8')
@@ -136,10 +128,9 @@ def getTwitterHandle(id):
     else:
         handle = match.group('handle')
 
-    try:
-        TWITTER_AGENT.users.show(screen_name=handle)
+    if twitit.checkTwitterHandle(handle):
         return handle
-    except:
+    else:
         print(handle, 'in steam profile but not valid')
         return None
 
@@ -162,9 +153,6 @@ def fetchUrl(url, path=None):
         except:
             print('Unexpected error:', sys.exc_info()[0])
             raise LookupError('Failed to fetch leaderboard')
-
-def postTweet(text):
-    TWITTER_AGENT.statuses.update(status=text)
 
 
 def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
@@ -260,7 +248,7 @@ def composeMessage(person, board, tweet=False, debug=True):
 
     message = name + inter1 + str(rank) + inter2 + board + inter3 + strScore + ' ' + url + tag
     if tweet:
-        postTweet(message)
+        twitit.postTweet(message)
     if debug:
         print(message)
 
