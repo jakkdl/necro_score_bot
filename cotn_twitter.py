@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 import json
 import codecs
 import twitter
+import re
 import os
 import os.path
 import time
@@ -25,7 +26,6 @@ configPath = '/home/hatten/.config/cotn/'
 baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
-
 def readConfig(file):
     f = open(configPath + file)
     result = f.read()
@@ -33,9 +33,18 @@ def readConfig(file):
     return result.rstrip()
 
 
-steamkey = readConfig('steamkey')
-consumer_key = readConfig('consumer_key')
-consumer_secret = readConfig('consumer_secret')
+STEAMKEY = readConfig('steamkey')
+
+def initTwitterAgent():
+    my_twitter_credentials = os.path.expanduser(configPath + 'twitter_credentials')
+
+    consumer_key = readConfig('consumer_key')
+    consumer_secret = readConfig('consumer_secret')
+    oauth_token, oauth_secret = twitter.read_token_file(my_twitter_credentials)
+
+    return twitter.Twitter(auth=twitter.OAuth(
+        oauth_token, oauth_secret, consumer_key, consumer_secret))
+TWITTER_AGENT = initTwitterAgent()
 
 
 print('start at: ', time.strftime('%c'))
@@ -44,9 +53,10 @@ print('start at: ', time.strftime('%c'))
 def getBoardMax(name):
     if 'deathless' in name.lower():
         return 5
-    if 'seeded' in name.lower():
+    elif 'seeded' in name.lower():
         return 3
-    return 10
+    else:
+        return 10
 
 def formatBoardName(name):
     if 'DEATHLESS' in name:
@@ -73,15 +83,15 @@ def includeBoard(name):
     for j in exclude:
         if j.lower() in name.lower():
             return False
-    
+
     #Don't want the boards 'speedrun deathless'
     if 'speedrun' in name.lower() and 'deathless' in name.lower():
         return False
-    
+
     for i in modes:
         if i in name.lower():
             return True
-    
+
     return False
 
 def update():
@@ -113,24 +123,21 @@ def move(lbid, path1=currPath, path2=lastPath):
         print("source missing: ", path1)
     os.rename(path1 + lbid + '.xml', path2 + lbid + '.xml')
 
-
 def getTwitterHandle(id):
     url = 'http://steamcommunity.com/profiles/' + str(id)
     time.sleep(1)
     response = urllib.request.urlopen(url) #handle exceptions
     data = response.read()
     text = data.decode('utf-8')
-    if 'twitter' not in text:
-        return None
-    start = text.find('twitter')+13
-    end = text.find('\\', start, start+16)
-    handle = text[start:end]
-    MY_TWITTER_CREDS = os.path.expanduser(configPath + 'twitter_credentials')
-    oauth_token, oauth_secret = twitter.read_token_file(MY_TWITTER_CREDS)
-    t = twitter.Twitter(auth=twitter.OAuth(
-        oauth_token, oauth_secret, consumer_key, consumer_secret))
+
+    match = re.search(r"twitter\.com\\/(?P<handle>\w+)\\\"", text)
+    if match is None:
+        return match
+    else:
+        handle = match.group("handle")
+
     try:
-        t.users.show(screen_name=handle)
+        TWITTER_AGENT.users.show(screen_name=handle)
         return handle
     except:
         print(handle, "in steam profile but not valid")
@@ -138,11 +145,7 @@ def getTwitterHandle(id):
 
 
 def postTweet(text):
-    MY_TWITTER_CREDS = os.path.expanduser(configPath + 'twitter_credentials')
-    oauth_token, oauth_secret = twitter.read_token_file(MY_TWITTER_CREDS)
-    t = twitter.Twitter(auth=twitter.OAuth(
-        oauth_token, oauth_secret, consumer_key, consumer_secret))
-    t.statuses.update(status=text)
+    TWITTER_AGENT.statuses.update(status=text)
 
 
 def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
@@ -185,7 +188,8 @@ def nth(i):
         return 'nd'
     elif i == 3:
         return 'rd'
-    return 'th'
+    else:
+        return 'th'
 
 def composeMessage(person, board, tweet=False, debug=True):
     steamid = person[0]
@@ -198,8 +202,11 @@ def composeMessage(person, board, tweet=False, debug=True):
     url = boardToUrl(board)
 
     if 'Speed' in board:
-        relScore = relativeTime(score, prevScore)
-        strScore = scoreToTime(score) + relScore
+        time = scoreAsMilliseconds(score)
+        prevTime = scoreAsMilliseconds(prevScore) if prevScore != -1 else -1
+
+        relTime = relativeTime(time, prevTime)
+        strScore = formatTime(time) + relTime
     elif 'Deathless' in board:
         relScore = relativeProgress(score, prevScore)
         strScore = formatProgress(score) + relScore
@@ -224,13 +231,13 @@ def composeMessage(person, board, tweet=False, debug=True):
         elif 'Deathless' in board:
             inter3 += 'streak to '
 
-    
-   
+
+
 
     tag = ' #necrodancer'
-    twitterName = getTwitterHandle(steamid)
-    if twitterName:
-        name = '.@' + twitterName
+    twitterHandle = getTwitterHandle(steamid)
+    if twitterHandle:
+        name = '@' + twitterHandle
 
     message = name + inter1 + str(rank) + inter2 + board + inter3 + strScore + ' ' + url + tag
     if tweet:
@@ -243,7 +250,7 @@ def downloadBoard(lbid, path=basePath, start=1, end=10):
     if not os.path.isdir(path):
         print("creating", path)
         os.mkdir(path)
-    leaderboardurl=baseUrl + lbid + '/?xml=1&start=' + str(start) + '&end=' + str(end)
+    leaderboardurl=baseUrl + lbid + '/?xml=1&start=%d&end=%d'%(start, end)
     tries = 10
     while True:
         try:
@@ -262,9 +269,8 @@ def downloadBoard(lbid, path=basePath, start=1, end=10):
 def downloadIndex():
     urllib.request.urlretrieve(leaderboardsurl, boardFile)
 
-def steamname(id):
-    id = str(id)
-    url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + steamkey + '&steamids=' + id
+def steamname(steam_id):
+    url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%d'%(STEAMKEY, steam_id)
     response = urllib.request.urlopen(url)
     reader = codecs.getreader('utf-8')
     obj = json.load(reader(response))
@@ -302,65 +308,62 @@ def scoreToProgress(score):
 
 def formatProgress(score):
     wins, zone, level = scoreToProgress(score)
-    return str(wins) + ' wins, dying on ' + str(zone) + '-' + str(level)
+    return '%d wins, dying on %d-%d'%(wins, zone, level)
 
-def relativeProgress(score, prevScore):
-    #print(score, prevScore)
-    if prevScore == -1 or score - prevScore == 0:
+def relativeProgress(newScore, prevScore):
+    if prevScore == -1 or newScore == prevScore:
         return ''
-    wins, zone, level = scoreToProgress(prevScore)
-    return ' (up from ' + str(wins) + '-' + str(zone-1) + '-' + str(level-1) + ')'
+    else:
+        wins, zone, level = scoreToProgress(prevScore)
+        return ' (up from %d-%d-%d)'%(wins, zone-1, level-1)
 
-def invertTime(time):
-    return 100000000 - time
+def scoreAsMilliseconds(score):
+    return 100000000 - score
 
-def scoreToTime(score):
-    copy = invertTime(score)
-    msec = (copy % 1000) // 10 #only want precision of 2
-    copy //= 1000
-    sec = copy % 60
-    copy //= 60
-    min = copy  % 60
-    copy //= 60
-    hour = copy
-    result = ""
+def formatTime(milliseconds):
+    """ Takes in a time (in milliseconds) and returns a formatted string.
+        examples:
+            1000    -> '01.00'
+            100293  -> '01:40.29'
+            100298  -> '01:40.30'
+            4100298 -> '1:08:20.30'
+    """
+    hours, milliseconds = divmod(milliseconds, 60*60*1000)
+    minutes, milliseconds = divmod(milliseconds, 60*1000)
+    seconds, milliseconds = divmod(milliseconds, 1000)
+    milliseconds = round(milliseconds / 10.0) # Change precision from 3 to 2
 
-    mfill=1
-    sfill=1
-    if hour != 0:
-        result += str(hour) + ":"
-        mfill=2
-    if min != 0 or mfill == 2:
-        result += str(min).zfill(mfill) + ":"
-        sfill=2
-    result += str(sec).zfill(sfill) + "." + str(msec).zfill(2)
+    result = "%d:"%(hours) if hours else ""
+    result += "%02d:"%(minutes) if minutes else ""
+    result += "%02d.%02d"%(seconds, milliseconds)
+
     return result
 
 def boardToUrl(board):
     board = board.replace('All-Chars', 'All')
     board = board.split()
-    return 'http://crypt.toofz.com/Leaderboards/' + board[0] + '/' + board[1]
+    return 'http://crypt.toofz.com/Leaderboards/%s/%s'%(board[0], board[1])
 
 
-def relativeRank(rank, prevRank):
-    if prevRank == -1 or rank == prevRank:
+def relativeRank(newRank, prevRank):
+    if prevRank == -1 or newRank == prevRank:
         return ''
-    return ' (+' + str(prevRank - rank) + ')'
+    else:
+        return ' (+%d)'%(prevRank - newRank)
 
-def relativeTime(time, prevTime):
-    if prevTime == -1 or time == prevTime:
+def relativeTime(newTime, prevTime):
+    """ newTime and prevTime should be given in milliseconds
+    """
+    if prevTime == -1 or newTime == prevTime:
         return ''
-    realTime = invertTime(time)
-    realPrev = invertTime(prevTime)
-    relTime = realPrev - realTime
-    invertRelTime = invertTime(relTime)
-    return ' (-' + scoreToTime(invertRelTime) + ')'
+    else:
+        return ' (-%s)'%(formatTime(prevTime - newTime))
 
-def relativeScore(score, prevScore):
-    sum = score - prevScore
-    if sum == 0 or prevScore == -1:
+def relativeScore(newScore, prevScore):
+    if prevScore == -1 or newScore == prevScore:
         return ''
-    return ' (+' + str(sum) + ')'
+    else:
+        return ' (+%d)'%(newScore - prevScore)
 
 
 #leaderboardurl='http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
