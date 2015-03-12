@@ -252,7 +252,7 @@ def downloadBoard(lbid, path=basePath, start=1, end=10):
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
             tries = tries-1
             print("Catched", e, "trying", str(tries), "more times in 5 seconds")
-            sleep(5)
+            time.sleep(5)
             if tries == 0:
                 raise LookupError('Failed to fetch leaderboard')
         except:
