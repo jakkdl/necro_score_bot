@@ -10,8 +10,8 @@ import os.path
 import time
 import sys
 
-debug = False
-overWriteOld = True
+debug = True
+overWriteOld = False
 
 if not debug:
     basePath = '/home/hatten/Var/cotn/'
