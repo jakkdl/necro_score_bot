@@ -10,6 +10,7 @@ import time
 import sys
 
 debug = True
+overWriteOld = False
 
 if not debug:
     basePath = '/home/hatten/Var/cotn/'
@@ -93,10 +94,12 @@ def update():
         if includeBoard(name):
             maxIndex = getBoardMax(name)
             downloadBoard(lbid, currPath, 1, 100)
+            print(name)
             ids = diffingIds(lbid, maxIndex)
             for id in ids:
                 composeMessage(id, name, not debug, True)
-            move(lbid)
+            if overWriteOld:
+                move(lbid)
 
 
 def getRoot(xmlFile):
@@ -114,7 +117,8 @@ def move(lbid, path1=currPath, path2=lastPath):
 
 def getTwitterHandle(id):
     url = 'http://steamcommunity.com/profiles/' + str(id)
-    response = urllib.request.urlopen(url)
+    time.sleep(1)
+    response = urllib.request.urlopen(url) #handle exceptions
     data = response.read()
     text = data.decode('utf-8')
     if 'twitter' not in text:
@@ -153,13 +157,16 @@ def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
     ids = []
 
     #assume entries is at the same index in both files
+    #incorrent assumption, the field 'resultCount'
+    #is removed when a leaderboard gets more than 100 entries
     index = getEntryIndex(root1)
+    index2 = getEntryIndex(root2)
     for i in range(0, min(maxIndex, len(root1[index]))):
         entry = root1[index][i]
     #for entry in root1[index]:
         steamid, score, rank = extractEntry(entry)
         found = False
-        for entry in root2[index]:
+        for entry in root2[index2]:
             steamid2, score2, rank2 = extractEntry(entry)
             if steamid == steamid2:
                 found = True
@@ -245,7 +252,7 @@ def downloadBoard(lbid, path=basePath, start=1, end=10):
             break
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
             tries = tries-1
-            Print("Catched", e, "trying", str(tries), "more times in 5 seconds")
+            print("Catched", e, "trying", str(tries), "more times in 5 seconds")
             sleep(5)
             if tries == 0:
                 raise LookupError('Failed to fetch leaderboard')
@@ -372,6 +379,6 @@ update()
 #rat
 #print(getTwitterHandle(76561198089674311))
 #print(getTwitterHandle(76561197998362244))
-#printBoard('386753', currPath)
+#printBoard('470749', currPath)
 #printBoard('386753', currPath)
 #print(diff('695473'))
