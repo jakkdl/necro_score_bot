@@ -94,7 +94,6 @@ def update():
         if includeBoard(name):
             maxIndex = getBoardMax(name)
             downloadBoard(lbid, currPath, 1, 100)
-            print(name)
             ids = diffingIds(lbid, maxIndex)
             for id in ids:
                 composeMessage(id, name, not debug, True)
