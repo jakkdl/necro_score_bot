@@ -322,7 +322,7 @@ def relativeProgress(newScore, prevScore):
         return ''
     else:
         wins, zone, level = scoreToProgress(prevScore)
-        return ' (up from %d-%d-%d)'%(wins, zone-1, level-1)
+        return ' (up from %d-%d-%d)'%(wins, zone, level)
 
 def scoreAsMilliseconds(score):
     return 100000000 - score
