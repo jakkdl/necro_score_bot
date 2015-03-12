@@ -154,7 +154,7 @@ def fetchUrl(url, path=None):
                 return urllib.request.urlopen(url)
             break
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            tries = tries-1
+            tries -= 1
             print('Catched', e, 'fetching', url, 'trying', tries, 'more times in 5 seconds')
             time.sleep(5)
             if tries == 0:
