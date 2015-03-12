@@ -333,8 +333,15 @@ def formatTime(milliseconds):
     seconds, milliseconds = divmod(milliseconds, 1000)
     milliseconds = round(milliseconds / 10.0) # Change precision from 3 to 2
 
-    result = "%d:"%(hours) if hours else ""
-    result += "%02d:"%(minutes) if minutes else ""
+    result = ''
+
+    minutePad="%d:"
+    if hours:
+        result += "%d:"%(hours)
+        minutePad="%02d:"
+    if minutes or hours:
+        result += pad%(minutes)
+
     result += "%02d.%02d"%(seconds, milliseconds)
 
     return result
@@ -373,6 +380,7 @@ def relativeScore(newScore, prevScore):
 
 if not os.path.isdir(basePath):
     os.mkdir(basePath)
+
 
 #postTweet("Hello again")
 update()
