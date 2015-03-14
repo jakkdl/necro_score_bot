@@ -388,7 +388,12 @@ def relativeScore(newScore, prevScore):
 if not os.path.isdir(basePath):
     os.mkdir(basePath)
 
-
+def delete20():
+    a = TWITTER_AGENT.statuses.user_timeline(screen_name='necro_score_bot')
+    for i in range(1, 20):
+        print(i)
+        TWITTER_AGENT.statuses.destroy(id=int(a[i]['id_str']))
+#print(TWITTER_AGENT.users.show(screen_name='necro_score_bot'))
 #postTweet('Hello again')
 update()
 #print(getTwitterHandle('76561198074553183'))
