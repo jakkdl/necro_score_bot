@@ -10,9 +10,9 @@ import time
 import sys
 from nsb_twitter import *
 
-debugPath = True
+debugPath = False
 overWriteOld = True
-tweet = True
+tweet = False
 
 if not debugPath:
     basePath = '/home/hatten/Var/cotn/'
