@@ -3,17 +3,18 @@ import urllib.request
 import xml.etree.ElementTree as ET
 import json
 import codecs
-import twitter
 import re
 import os
 import os.path
 import time
 import sys
+from nsb_twitter import *
 
-debug = False
+debugPath = False
 overWriteOld = True
+tweet = True
 
-if not debug:
+if not debugPath:
     basePath = '/home/hatten/Var/cotn/'
 else:
     basePath = '/home/hatten/Var/cotn_debug/'
@@ -21,13 +22,16 @@ else:
 boardFile = basePath + 'leaderboards.xml'
 lastPath = basePath + 'last/'
 currPath = basePath + 'tmp/'
-configPath = '/home/hatten/.config/cotn/'
+configPath = '~/.config/cotn/'
 
 baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
+
+twitit = twit(os.path.expanduser(configPath + 'twitter/'))
+
 def readConfig(file):
-    f = open(configPath + file)
+    f = open(os.path.expanduser(configPath + file))
     result = f.read()
     f.close()
     return result.rstrip()
@@ -35,16 +39,6 @@ def readConfig(file):
 
 STEAMKEY = readConfig('steamkey')
 
-def initTwitterAgent():
-    my_twitter_credentials = os.path.expanduser(configPath + 'twitter_credentials')
-
-    consumer_key = readConfig('consumer_key')
-    consumer_secret = readConfig('consumer_secret')
-    oauth_token, oauth_secret = twitter.read_token_file(my_twitter_credentials)
-
-    return twitter.Twitter(auth=twitter.OAuth(
-        oauth_token, oauth_secret, consumer_key, consumer_secret))
-TWITTER_AGENT = initTwitterAgent()
 
 
 print('start at: ', time.strftime('%c'))
@@ -84,6 +78,9 @@ def includeBoard(name):
         if j.lower() in name.lower():
             return False
 
+    if 'melody' in name.lower():
+        return True
+    return False
     #Don't want the boards 'speedrun deathless'
     if 'speedrun' in name.lower() and 'deathless' in name.lower():
         return False
@@ -106,9 +103,10 @@ def update():
             downloadBoard(lbid, currPath, 1, 100)
             ids = diffingIds(lbid, maxIndex)
             for id in ids:
-                composeMessage(id, name, not debug, True)
+                composeMessage(id, name, tweet, True)
             if overWriteOld:
                 move(lbid)
+            #break
 
 
 def getRoot(xmlFile):
@@ -125,7 +123,6 @@ def move(lbid, path1=currPath, path2=lastPath):
 
 def getTwitterHandle(id):
     url = 'http://steamcommunity.com/profiles/' + str(id)
-    time.sleep(1)
     response =fetchUrl(url)
     data = response.read()
     text = data.decode('utf-8')
@@ -136,10 +133,9 @@ def getTwitterHandle(id):
     else:
         handle = match.group('handle')
 
-    try:
-        TWITTER_AGENT.users.show(screen_name=handle)
+    if twitit.checkTwitterHandle(handle):
         return handle
-    except:
+    else:
         print(handle, 'in steam profile but not valid')
         return None
 
@@ -154,7 +150,7 @@ def fetchUrl(url, path=None):
                 return urllib.request.urlopen(url)
             break
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            tries = tries-1
+            tries -= 1
             print('Catched', e, 'fetching', url, 'trying', tries, 'more times in 5 seconds')
             time.sleep(5)
             if tries == 0:
@@ -162,9 +158,6 @@ def fetchUrl(url, path=None):
         except:
             print('Unexpected error:', sys.exc_info()[0])
             raise LookupError('Failed to fetch leaderboard')
-
-def postTweet(text):
-    TWITTER_AGENT.statuses.update(status=text)
 
 
 def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
@@ -260,7 +253,7 @@ def composeMessage(person, board, tweet=False, debug=True):
 
     message = name + inter1 + str(rank) + inter2 + board + inter3 + strScore + ' ' + url + tag
     if tweet:
-        postTweet(message)
+        twitit.postTweet(message)
     if debug:
         print(message)
 
@@ -322,7 +315,7 @@ def relativeProgress(newScore, prevScore):
         return ''
     else:
         wins, zone, level = scoreToProgress(prevScore)
-        return ' (up from %d-%d-%d)'%(wins, zone-1, level-1)
+        return ' (up from %d-%d-%d)'%(wins, zone, level)
 
 def scoreAsMilliseconds(score):
     return 100000000 - score
