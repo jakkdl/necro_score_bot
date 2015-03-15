@@ -10,10 +10,11 @@ import time
 import sys
 from nsb_twitter import *
 
-debug = True
-overWriteOld = False
+debugPath = True
+overWriteOld = True
+tweet = True
 
-if not debug:
+if not debugPath:
     basePath = '/home/hatten/Var/cotn/'
 else:
     basePath = '/home/hatten/Var/cotn_debug/'
@@ -77,6 +78,9 @@ def includeBoard(name):
         if j.lower() in name.lower():
             return False
 
+    if 'melody' in name.lower():
+        return True
+    return False
     #Don't want the boards 'speedrun deathless'
     if 'speedrun' in name.lower() and 'deathless' in name.lower():
         return False
@@ -99,9 +103,10 @@ def update():
             downloadBoard(lbid, currPath, 1, 100)
             ids = diffingIds(lbid, maxIndex)
             for id in ids:
-                composeMessage(id, name, not debug, True)
+                composeMessage(id, name, tweet, True)
             if overWriteOld:
                 move(lbid)
+            #break
 
 
 def getRoot(xmlFile):

@@ -1,5 +1,6 @@
 import twitter
 import os
+import os.path
 
 class twit:
     def readConfig(self, file):
@@ -25,7 +26,27 @@ class twit:
         self.agent = self.initTwitterAgent(credentialsFile, key, secret)
 
 
+        self.tweetCount = 0
+        self.blockFile = configDir + 'blockFile'
+        self.block = self.blockCheck()
 
+
+
+    def createBlock(self):
+        open(self.blockFile, 'w')
+
+
+    def blockExists(self):
+        return os.path.isfile(self.blockFile)
+
+    def blockCheck(self):
+        if self.tweetCount > 10:
+            self.createBlock()
+        if self.blockExists():
+            raise LookupError('Tweeting is blocked')
+
+    def incrementCount(self):
+        self.tweetCount += 1
 
 
 
@@ -38,4 +59,6 @@ class twit:
 
 
     def postTweet(self, text):
+        self.incrementCount()
+        self.blockCheck()
         self.agent.statuses.update(status=text)
