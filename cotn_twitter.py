@@ -11,7 +11,7 @@ import sys
 from nsb_twitter import *
 
 debugPath = False
-overWriteOld = True
+overWriteOld = False
 tweet = False
 
 if not debugPath:
@@ -78,9 +78,6 @@ def includeBoard(name):
         if j.lower() in name.lower():
             return False
 
-    if 'melody' in name.lower():
-        return True
-    return False
     #Don't want the boards 'speedrun deathless'
     if 'speedrun' in name.lower() and 'deathless' in name.lower():
         return False
