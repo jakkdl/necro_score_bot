@@ -1,14 +1,10 @@
-import urllib
-import urllib.request
 import xml.etree.ElementTree as ET
-import json
-import codecs
-import re
 import os
 import os.path
 import time
-import sys
 from nsb_twitter import *
+import nsb_leaderboard
+import nsb_steam
 
 debugPath = False
 overWriteOld = True
@@ -30,77 +26,24 @@ leaderboardsurl = baseUrl + '?xml=1'
 
 twitit = twit(os.path.expanduser(configPath + 'twitter/'))
 
-def readConfig(file):
-    f = open(os.path.expanduser(configPath + file))
-    result = f.read()
-    f.close()
-    return result.rstrip()
-
-
-STEAMKEY = readConfig('steamkey')
-
-
 
 print('start at: ', time.strftime('%c'))
 
 
-def getBoardMax(name):
-    if 'deathless' in name.lower():
-        return 5
-    elif 'seeded' in name.lower():
-        return 3
-    else:
-        return 10
-
-def formatBoardName(name):
-    if 'DEATHLESS' in name:
-        #Remove hardcore from the name
-        name = name.replace('HARDCORE ','')
-    name = name.replace('DOVE', 'Dove')
-    name = name.replace('Pacifist', 'Dove')
-    name = name.replace('All Char', 'All-Char')
-    name = name.replace('DEATHLESS', 'Deathless')
-    name = name.replace('SPEEDRUN', 'Speed')
-    name = name.replace('HARDCORE', 'Score')
-    name = name.split()
-    if len(name) == 2 and 'Deathless' not in name:
-        name[0], name[1] = name[1], name[0]
-    if len(name) == 1:
-        name.append(name[0])
-        name[0] = 'Cadence'
-    return name[0] + ' ' + name[1]
-
-
-def includeBoard(name):
-    modes = ['hardcore', 'speedrun', 'deathless']
-    exclude = ['CO-OP', 'CUSTOM', '/', 'Pacifist', 'Thief', 'Ghost', 'Coda', 'seeded']
-    for j in exclude:
-        if j.lower() in name.lower():
-            return False
-
-    #Don't want the boards 'speedrun deathless'
-    if 'speedrun' in name.lower() and 'deathless' in name.lower():
-        return False
-
-    for i in modes:
-        if i in name.lower():
-            return True
-
-    return False
-
 def update():
-    downloadIndex()
+    nsb_steam.downloadIndex()
     root = getRoot(boardFile)
 
     for i in range(3, len(root)):
         name = root[i][2].text
         lbid = root[i][1].text
-        if includeBoard(name):
-            maxIndex = getBoardMax(name)
-            downloadBoard(lbid, currPath, 1, 100)
-            ids = diffingIds(lbid, maxIndex)
+        #print(name,lbid)
+        board = nsb_leaderboard.leaderboard(name)
+        if board.include():
+            nsb_steam.downloadBoard(lbid, currPath, 1, 100)
+            ids = diffingIds(lbid, board.max())
             for id in ids:
-                composeMessage(id, name, tweet, True)
+                composeMessage(id, board, tweet, True)
             if overWriteOld:
                 move(lbid)
             #break
@@ -118,46 +61,14 @@ def move(lbid, path1=currPath, path2=lastPath):
         print('source missing: ', path1)
     os.rename(path1 + lbid + '.xml', path2 + lbid + '.xml')
 
-def getTwitterHandle(id):
-    url = 'http://steamcommunity.com/profiles/' + str(id)
-    response =fetchUrl(url)
-    data = response.read()
-    text = data.decode('utf-8')
 
-    match = re.search(r"twitter\.com\\/(?P<handle>\w+)\\\"", text)
-    if match is None:
-        return match
-    else:
-        handle = match.group('handle')
-
-    if twitit.checkTwitterHandle(handle):
-        return handle
-    else:
-        print(handle, 'in steam profile but not valid')
-        return None
-
-
-def fetchUrl(url, path=None):
-    tries = 10
-    while True:
-        try:
-            if path:
-                urllib.request.urlretrieve(url, path)
-            else:
-                return urllib.request.urlopen(url)
-            break
-        except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            tries -= 1
-            print('Catched', e, 'fetching', url, 'trying', tries, 'more times in 5 seconds')
-            time.sleep(5)
-            if tries == 0:
-                raise LookupError('Failed to fetch', url)
-        except:
-            print('Unexpected error:', sys.exc_info()[0])
-            raise LookupError('Failed to fetch leaderboard')
 
 
 def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
+    if not os.path.isfile(path1 + lbid + '.xml'):
+        print(lbid, 'not existing in tmp')
+        return []
+
     root1 = getRoot(path1 + lbid + '.xml')
 
     if not os.path.isfile(path2 + lbid + '.xml'):
@@ -206,17 +117,19 @@ def composeMessage(person, board, tweet=False, debug=True):
     prevScore = person[2]
     rank = person[3]
     prevRank = person[4]
-    name = steamname(steamid)
-    board = formatBoardName(board)
-    url = boardToUrl(board)
+    name = nsb_steam.steamname(steamid)
+    if board.toofzSupport():
+        url = board.toofzUrl()
+    else:
+        url = ''
 
-    if 'Speed' in board:
+    if board.mode == 'speed':
         time = scoreAsMilliseconds(score)
         prevTime = scoreAsMilliseconds(prevScore) if prevScore != -1 else -1
 
         relTime = relativeTime(time, prevTime)
         strScore = formatTime(time) + relTime
-    elif 'Deathless' in board:
+    elif board.mode == 'deathless':
         relScore = relativeProgress(score, prevScore)
         strScore = formatProgress(score) + relScore
     else:
@@ -233,45 +146,27 @@ def composeMessage(person, board, tweet=False, debug=True):
         inter2 = nth(rank) + ' in '
         inter3 = ', improves '
         relRank = ''
-        if 'Score' in board:
+        if board.mode == 'score':
             inter3 += 'to '
-        elif 'Speed' in board:
+        elif board.mode == 'speed':
             inter3 += 'time to '
-        elif 'Deathless' in board:
+        elif board.mode == 'deathless':
             inter3 += 'streak to '
 
 
 
 
     tag = ' #necrodancer'
-    twitterHandle = getTwitterHandle(steamid)
+    twitterHandle = nsb_steam.getTwitterHandle(steamid, twitit)
     if twitterHandle:
         name = '.@' + twitterHandle
-
-    message = name + inter1 + str(rank) + inter2 + board + inter3 + strScore + ' ' + url + tag
+    
+    message = name + inter1 + str(rank) + inter2 + str(board) + inter3 + strScore + ' ' + url + tag
     if tweet:
         twitit.postTweet(message)
     if debug:
         print(message)
 
-
-def downloadBoard(lbid, path=basePath, start=1, end=10):
-    if not os.path.isdir(path):
-        print('creating', path)
-        os.mkdir(path)
-    leaderboardurl=baseUrl + lbid + '/?xml=1&start=%d&end=%d'%(start, end)
-    fetchUrl(leaderboardurl, path + lbid + '.xml')
-
-
-def downloadIndex():
-    fetchUrl(leaderboardsurl, boardFile)
-
-def steamname(steam_id):
-    url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%d'%(STEAMKEY, steam_id)
-    response = fetchUrl(url)
-    reader = codecs.getreader('utf-8')
-    obj = json.load(reader(response))
-    return obj['response']['players'][0]['personaname']
 
 def printPlayer(name, rank, score):
     print('rank', rank)
@@ -342,12 +237,6 @@ def formatTime(milliseconds):
     result += '%02d.%02d'%(seconds, milliseconds)
 
     return result
-
-def boardToUrl(board):
-    board = board.replace('All-Chars', 'All')
-    board = board.split()
-    return 'http://crypt.toofz.com/Leaderboards/%s/%s'%(board[0], board[1])
-
 
 def relativeRank(newRank, prevRank):
     if prevRank == -1 or newRank == prevRank:

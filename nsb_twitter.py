@@ -62,3 +62,12 @@ class twit:
         self.incrementCount()
         self.blockCheck()
         self.agent.statuses.update(status=text)
+
+
+    def userTweetCount(self, name):
+        return self.agent.users.show(screen_name=name)['statuses_count']
+
+    def timeline(self, name, count=-1):
+        if count == -1:
+            count = self.userTweetCount(name)
+        return self.agent.statuses.user_timeline(screen_name=name, count=count)
