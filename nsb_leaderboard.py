@@ -49,6 +49,8 @@ class leaderboard:
             return 'daily'
         if 'speedrun' in name and 'deathless' in name:
             return None
+        if 'all zones' in name:
+            return None
         if 'deathless' in name:
             return 'deathless'
         if 'speedrun' in name:

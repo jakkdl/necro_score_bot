@@ -1,15 +1,10 @@
-import urllib
-import urllib.request
 import xml.etree.ElementTree as ET
-import json
-import codecs
-import re
 import os
 import os.path
 import time
-import sys
 from nsb_twitter import *
 import nsb_leaderboard
+import nsb_steam
 
 debugPath = False
 overWriteOld = False
@@ -31,33 +26,24 @@ leaderboardsurl = baseUrl + '?xml=1'
 
 twitit = twit(os.path.expanduser(configPath + 'twitter/'))
 
-def readConfig(file):
-    f = open(os.path.expanduser(configPath + file))
-    result = f.read()
-    f.close()
-    return result.rstrip()
-
-
-STEAMKEY = readConfig('steamkey')
-
-
 
 print('start at: ', time.strftime('%c'))
 
 
 def update():
-    #downloadIndex()
+    nsb_steam.downloadIndex()
     root = getRoot(boardFile)
 
     for i in range(3, len(root)):
         name = root[i][2].text
         lbid = root[i][1].text
+        #print(name,lbid)
         board = nsb_leaderboard.leaderboard(name)
         if board.include():
-            #downloadBoard(lbid, currPath, 1, 100)
+            nsb_steam.downloadBoard(lbid, currPath, 1, 100)
             ids = diffingIds(lbid, board.max())
             for id in ids:
-                composeMessage(id, name, tweet, True)
+                composeMessage(id, board, tweet, True)
             if overWriteOld:
                 move(lbid)
             #break
@@ -75,43 +61,7 @@ def move(lbid, path1=currPath, path2=lastPath):
         print('source missing: ', path1)
     os.rename(path1 + lbid + '.xml', path2 + lbid + '.xml')
 
-def getTwitterHandle(id):
-    url = 'http://steamcommunity.com/profiles/' + str(id)
-    response =fetchUrl(url)
-    data = response.read()
-    text = data.decode('utf-8')
 
-    match = re.search(r"twitter\.com\\/(?P<handle>\w+)\\\"", text)
-    if match is None:
-        return match
-    else:
-        handle = match.group('handle')
-
-    if twitit.checkTwitterHandle(handle):
-        return handle
-    else:
-        print(handle, 'in steam profile but not valid')
-        return None
-
-
-def fetchUrl(url, path=None):
-    tries = 10
-    while True:
-        try:
-            if path:
-                urllib.request.urlretrieve(url, path)
-            else:
-                return urllib.request.urlopen(url)
-            break
-        except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            tries -= 1
-            print('Catched', e, 'fetching', url, 'trying', tries, 'more times in 5 seconds')
-            time.sleep(5)
-            if tries == 0:
-                raise LookupError('Failed to fetch', url)
-        except:
-            print('Unexpected error:', sys.exc_info()[0])
-            raise LookupError('Failed to fetch leaderboard')
 
 
 def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
@@ -167,9 +117,9 @@ def composeMessage(person, board, tweet=False, debug=True):
     prevScore = person[2]
     rank = person[3]
     prevRank = person[4]
-    name = steamname(steamid)
-    if board.toofzSupport:
-        url = board.toofzUrl
+    name = nsb_steam.steamname(steamid)
+    if board.toofzSupport():
+        url = board.toofzUrl()
     else:
         url = ''
 
@@ -207,34 +157,16 @@ def composeMessage(person, board, tweet=False, debug=True):
 
 
     tag = ' #necrodancer'
-    twitterHandle = getTwitterHandle(steamid)
+    twitterHandle = nsb_steam.getTwitterHandle(steamid, twitit)
     if twitterHandle:
         name = '.@' + twitterHandle
-
+    
     message = name + inter1 + str(rank) + inter2 + str(board) + inter3 + strScore + ' ' + url + tag
     if tweet:
         twitit.postTweet(message)
     if debug:
         print(message)
 
-
-def downloadBoard(lbid, path=basePath, start=1, end=10):
-    if not os.path.isdir(path):
-        print('creating', path)
-        os.mkdir(path)
-    leaderboardurl=baseUrl + lbid + '/?xml=1&start=%d&end=%d'%(start, end)
-    fetchUrl(leaderboardurl, path + lbid + '.xml')
-
-
-def downloadIndex():
-    fetchUrl(leaderboardsurl, boardFile)
-
-def steamname(steam_id):
-    url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%d'%(STEAMKEY, steam_id)
-    response = fetchUrl(url)
-    reader = codecs.getreader('utf-8')
-    obj = json.load(reader(response))
-    return obj['response']['players'][0]['personaname']
 
 def printPlayer(name, rank, score):
     print('rank', rank)
