@@ -9,6 +9,7 @@ import os.path
 import time
 import sys
 from nsb_twitter import *
+import nsb_leaderboard
 
 debugPath = False
 overWriteOld = False
@@ -44,61 +45,17 @@ STEAMKEY = readConfig('steamkey')
 print('start at: ', time.strftime('%c'))
 
 
-def getBoardMax(name):
-    if 'deathless' in name.lower():
-        return 5
-    elif 'seeded' in name.lower():
-        return 3
-    else:
-        return 10
-
-def formatBoardName(name):
-    if 'DEATHLESS' in name:
-        #Remove hardcore from the name
-        name = name.replace('HARDCORE ','')
-    name = name.replace('DOVE', 'Dove')
-    name = name.replace('Pacifist', 'Dove')
-    name = name.replace('All Char', 'All-Char')
-    name = name.replace('DEATHLESS', 'Deathless')
-    name = name.replace('SPEEDRUN', 'Speed')
-    name = name.replace('HARDCORE', 'Score')
-    name = name.split()
-    if len(name) == 2 and 'Deathless' not in name:
-        name[0], name[1] = name[1], name[0]
-    if len(name) == 1:
-        name.append(name[0])
-        name[0] = 'Cadence'
-    return name[0] + ' ' + name[1]
-
-
-def includeBoard(name):
-    modes = ['hardcore', 'speedrun', 'deathless']
-    exclude = ['CO-OP', 'CUSTOM', '/', 'Pacifist', 'Thief', 'Ghost', 'Coda', 'seeded']
-    for j in exclude:
-        if j.lower() in name.lower():
-            return False
-
-    #Don't want the boards 'speedrun deathless'
-    if 'speedrun' in name.lower() and 'deathless' in name.lower():
-        return False
-
-    for i in modes:
-        if i in name.lower():
-            return True
-
-    return False
-
 def update():
-    downloadIndex()
+    #downloadIndex()
     root = getRoot(boardFile)
 
     for i in range(3, len(root)):
         name = root[i][2].text
         lbid = root[i][1].text
-        if includeBoard(name):
-            maxIndex = getBoardMax(name)
-            downloadBoard(lbid, currPath, 1, 100)
-            ids = diffingIds(lbid, maxIndex)
+        board = nsb_leaderboard.leaderboard(name)
+        if board.include():
+            #downloadBoard(lbid, currPath, 1, 100)
+            ids = diffingIds(lbid, board.max())
             for id in ids:
                 composeMessage(id, name, tweet, True)
             if overWriteOld:
@@ -158,6 +115,10 @@ def fetchUrl(url, path=None):
 
 
 def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
+    if not os.path.isfile(path1 + lbid + '.xml'):
+        print(lbid, 'not existing in tmp')
+        return []
+
     root1 = getRoot(path1 + lbid + '.xml')
 
     if not os.path.isfile(path2 + lbid + '.xml'):
@@ -207,16 +168,18 @@ def composeMessage(person, board, tweet=False, debug=True):
     rank = person[3]
     prevRank = person[4]
     name = steamname(steamid)
-    board = formatBoardName(board)
-    url = boardToUrl(board)
+    if board.toofzSupport:
+        url = board.toofzUrl
+    else:
+        url = ''
 
-    if 'Speed' in board:
+    if board.mode == 'speed':
         time = scoreAsMilliseconds(score)
         prevTime = scoreAsMilliseconds(prevScore) if prevScore != -1 else -1
 
         relTime = relativeTime(time, prevTime)
         strScore = formatTime(time) + relTime
-    elif 'Deathless' in board:
+    elif board.mode == 'deathless':
         relScore = relativeProgress(score, prevScore)
         strScore = formatProgress(score) + relScore
     else:
@@ -233,11 +196,11 @@ def composeMessage(person, board, tweet=False, debug=True):
         inter2 = nth(rank) + ' in '
         inter3 = ', improves '
         relRank = ''
-        if 'Score' in board:
+        if board.mode == 'score':
             inter3 += 'to '
-        elif 'Speed' in board:
+        elif board.mode == 'speed':
             inter3 += 'time to '
-        elif 'Deathless' in board:
+        elif board.mode == 'deathless':
             inter3 += 'streak to '
 
 
@@ -248,7 +211,7 @@ def composeMessage(person, board, tweet=False, debug=True):
     if twitterHandle:
         name = '.@' + twitterHandle
 
-    message = name + inter1 + str(rank) + inter2 + board + inter3 + strScore + ' ' + url + tag
+    message = name + inter1 + str(rank) + inter2 + str(board) + inter3 + strScore + ' ' + url + tag
     if tweet:
         twitit.postTweet(message)
     if debug:
@@ -342,12 +305,6 @@ def formatTime(milliseconds):
     result += '%02d.%02d'%(seconds, milliseconds)
 
     return result
-
-def boardToUrl(board):
-    board = board.replace('All-Chars', 'All')
-    board = board.split()
-    return 'http://crypt.toofz.com/Leaderboards/%s/%s'%(board[0], board[1])
-
 
 def relativeRank(newRank, prevRank):
     if prevRank == -1 or newRank == prevRank:
