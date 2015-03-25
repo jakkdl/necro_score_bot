@@ -1,6 +1,6 @@
 import datetime
 ##character
-#All-Char, Aria, Bard, Bolt, Cadence, Coda, Dorian, Dove, Eli,  Melody, Monk, None
+#All-Char, story mode, Aria, Bard, Bolt, Cadence, Coda, Dorian, Dove, Eli,  Melody, Monk, None
 
 ##Mode
 #Speed, Score,  Deathless, Daily, None
@@ -16,15 +16,12 @@ import datetime
 
 class leaderboard:
     def checkCadence(self, name):
-        name = name.replace('hardcore', '')
-        name = name.replace('seeded', '')
-        name = name.replace('deathless', '')
-        name = name.replace('speedrun', '')
-        name = name.replace('co-op', '')
-        name = name.replace('custom', '')
-        name = name.replace(' ', '')
+        delete = ['hardcore', 'seeded', 'deathless',
+                'speedrun', 'co-op', 'custom', ' ']
+        for i in delete:
+            name = name.replace(i, '')
         return name == ''
-    
+   
     def checkSeeded(self, name):
         return 'seeded' in name
 
@@ -35,8 +32,8 @@ class leaderboard:
         return 'custom' in name
 
     def extractCharacter(self, name):
-        names = ['all char', 'aria', 'bard', 'bolt', 'coda',
-                'dorian', 'dove', 'eli', 'melody', 'monk']
+        names = ['all char', 'story mode', 'aria', 'bard', 'bolt',
+                'coda', 'dorian', 'dove', 'eli', 'melody', 'monk']
         for i in names:
             if i in name:
                 return i
@@ -48,8 +45,6 @@ class leaderboard:
         if '/' in name:
             return 'daily'
         if 'speedrun' in name and 'deathless' in name:
-            return None
-        if 'all zones' in name:
             return None
         if 'deathless' in name:
             return 'deathless'
@@ -87,8 +82,8 @@ class leaderboard:
 
     def debugString(self):
         name = ''
-        name += 'character: ' + self.character + '\n'
-        name += 'mode: ' + self.mode + '\n'
+        name += 'character: ' + str(self.character) + '\n'
+        name += 'mode: ' + str(self.mode) + '\n'
         name += 'seeded: ' + str(self.seeded) + '\n'
         name += 'coop: ' + str(self.coop) + '\n'
         name += 'customMusic: ' + str(self.customMusic)
@@ -102,6 +97,8 @@ class leaderboard:
             return 3
         if self.seeded:
             return 1
+        if self.character == 'story mode':
+            return 5
         if self.mode == 'deathless':
             return 5
         if self.mode == 'score':
