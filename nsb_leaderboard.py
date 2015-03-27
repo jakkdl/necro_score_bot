@@ -127,11 +127,14 @@ class leaderboard:
         return False
 
     def toofzChar(self, char):
-        char = char.replace('all-char', 'all')
+        if char = 'all-char':
+            return 'all'
+        if char = 'story mode':
+            return 'story'
         return char
 
     def toofzMode(self, mode):
-        mode = mode.replace('score', 'hardcore')
+        #mode = mode.replace('score', 'hardcore')
         return mode
 
     def toofzSupport(self):
