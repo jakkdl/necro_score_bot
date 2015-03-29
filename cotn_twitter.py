@@ -38,10 +38,10 @@ def update():
         name = root[i][2].text
         lbid = root[i][1].text
         #print(name,lbid)
-        board = nsb_leaderboard.leaderboard(name)
+        board = nsb_leaderboard.leaderboard(name, lbid)
         if board.include():
-            nsb_steam.downloadBoard(lbid, currPath, 1, 100)
-            ids = diffingIds(lbid, board.max())
+            nsb_steam.downloadBoard(currPath, 1, 100)
+            ids = diffingIds(board)
             for id in ids:
                 composeMessage(id, board, tweet, True)
             if overWriteOld:
@@ -64,7 +64,7 @@ def move(lbid, path1=currPath, path2=lastPath):
 
 
 
-def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
+def diffingIds(board, path1=currPath, path2=lastPath):
     if not os.path.isfile(path1 + lbid + '.xml'):
         print(lbid, 'not existing in tmp')
         return []
@@ -77,6 +77,8 @@ def diffingIds(lbid, maxIndex, path1=currPath, path2=lastPath):
     root2 = getRoot(path2 + lbid + '.xml')
 
     ids = []
+    maxIndex = board.max()
+    lbid = board.lbid
 
     #assume entries is at the same index in both files
     #incorrent assumption, the field 'resultCount'

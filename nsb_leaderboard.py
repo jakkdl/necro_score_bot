@@ -15,21 +15,26 @@ import datetime
 #True, False
 
 class leaderboard:
+
     def checkCadence(self, name):
         delete = ['hardcore', 'seeded', 'deathless',
                 'speedrun', 'co-op', 'custom', ' ']
         for i in delete:
             name = name.replace(i, '')
         return name == ''
-   
+
+
     def checkSeeded(self, name):
         return 'seeded' in name
+
 
     def checkCoop(self, name):
         return 'co-op' in name
 
+
     def checkCustomMusic(self, name):
         return 'custom' in name
+
 
     def extractCharacter(self, name):
         names = ['all char', 'story mode', 'aria', 'bard', 'bolt',
@@ -40,6 +45,7 @@ class leaderboard:
         if self.checkCadence(name):
             return 'cadence'
         return None
+
 
     def extractMode(self, name):
         if '/' in name:
@@ -53,10 +59,12 @@ class leaderboard:
         if 'hardcore' in name:
             return 'score'
         return None
-    
+
+
     def daily(self):
         return self.mode == 'daily'
 
+    
     def extractDate(self, name):
         if not self.daily():
             return None
@@ -65,7 +73,10 @@ class leaderboard:
         return datetime.date(int(sp[2]), int(sp[1]), int(sp[0]))
 
 
-    def __init__(self, name):
+    
+    def __init__(self, name, lbid):
+        self.lbid = lbid
+
         name = name.lower()
         self.character = self.extractCharacter(name)
         self.mode = self.extractMode(name)
@@ -74,12 +85,14 @@ class leaderboard:
         self.coop = self.checkCoop(name)
         self.customMusic = self.checkCustomMusic(name)
 
+    
     def __str__(self):
         ##TODO: Make up a pretty solution for all boards and write/implement
         if self.character == None or self.mode == None:
             return 'None'
         return (self.character + ' ' + self.mode).title()
 
+    
     def debugString(self):
         name = ''
         name += 'character: ' + str(self.character) + '\n'
@@ -91,12 +104,12 @@ class leaderboard:
 
 
     def max(self):
-        if self.customMusic:
-            return 1
+        #if self.customMusic:
+            #return 1
         if self.coop:
             return 3
         if self.seeded:
-            return 1
+            return 3
         if self.character == 'story mode':
             return 5
         if self.mode == 'deathless':
@@ -109,23 +122,23 @@ class leaderboard:
             return 3
         return None
 
+    
     def include(self):
         if self.customMusic:
             return False
-        if self.coop:
-            return False
-        if self.seeded:
-            return False
-        if self.mode == 'daily':
+        if self.coop and self.seeded:
             return False
         if self.character == 'coda':
             return False
+        if self.mode == 'daily':
+            return True
         if self.character == None:
             return False
         if self.mode != None:
             return True
         return False
 
+    
     def toofzChar(self, char):
         if char = 'all-char':
             return 'all'
@@ -133,10 +146,12 @@ class leaderboard:
             return 'story'
         return char
 
+    
     def toofzMode(self, mode):
         #mode = mode.replace('score', 'hardcore')
         return mode
 
+    
     def toofzSupport(self):
         if self.coop or self.seeded or self.customMusic:
             return False
@@ -146,7 +161,10 @@ class leaderboard:
             return False
         return True
 
+    
     def toofzUrl(self):
+        if self.daily():
+            return str(self.date)
         char = self.toofzChar(self.character)
         mode = self.toofzMode(self.mode)
         return 'http://crypt.toofz.com/Leaderboards/%s/%s'%(char, mode)
