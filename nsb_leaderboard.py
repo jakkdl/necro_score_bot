@@ -140,9 +140,9 @@ class leaderboard:
 
     
     def toofzChar(self, char):
-        if char = 'all-char':
+        if char == 'all-char':
             return 'all'
-        if char = 'story mode':
+        if char == 'story mode':
             return 'story'
         return char
 
