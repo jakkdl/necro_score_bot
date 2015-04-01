@@ -5,6 +5,8 @@ import codecs
 import json
 import re
 import time
+import sys
+
 baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
@@ -43,38 +45,32 @@ def fetchUrl(url, path=None):
             break
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
             tries -= 1
-            print('Catched', e, 'fetching', url, 'trying', tries, 'more times in 5 seconds')
+            print('Catched "' + str(e) + '" fetching', url, 'trying', tries, 'more times in 5 seconds')
             time.sleep(5)
             if tries == 0:
                 raise LookupError('Failed to fetch', url)
         except:
-            print('Unexpected error:', sys.exc_info()[0])
-            raise LookupError('Failed to fetch leaderboard')
+            tries -= 1
+            print('Catched unexpected error: "' + str(sys.exc_info()[0]) + '" fetching', url, 'trying', tries, 'more times in 5 seconds')
+            time.sleep(5)
+            if tries == 0:
+                raise LookupError('Failed to fetch leaderboard at ' + url)
 
-def downloadBoard(lbid, path=basePath, start=1, end=10):
-    if not os.path.isdir(path):
-        print('creating', path)
-        os.mkdir(path)
-    leaderboardurl=baseUrl + lbid + '/?xml=1&start=%d&end=%d'%(start, end)
-    fetchUrl(leaderboardurl, path + lbid + '.xml')
 
-def boardName(lbid):
-    url=baseUrl + str(lbid) + '/?xml=1'
-    response =fetchUrl(url)
+def boardUrl(lbid, start, end):
+    return baseUrl + str(lbid) + '/?xml=1&start=%d&end=%d'%(start, end)
+
+def decodeResponse(response):
     data = response.read()
     text = data.decode('utf-8')
     return text
-
-
 
 def downloadIndex():
     fetchUrl(leaderboardsurl, boardFile)
 
 def getTwitterHandle(id, twitit):
     url = 'http://steamcommunity.com/profiles/' + str(id)
-    response =fetchUrl(url)
-    data = response.read()
-    text = data.decode('utf-8')
+    text = decodeResponse(fetchUrl(url))
 
     match = re.search(r"twitter\.com\\/(?P<handle>\w+)\\\"", text)
     if match is None:

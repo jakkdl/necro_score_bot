@@ -1,8 +1,8 @@
-import twitter
+import twitter as twitter_api
 import os.path
 import math
 
-class twit:
+class twitter:
     def readConfig(self, file):
         f = open(file)
         result = f.read()
@@ -12,9 +12,9 @@ class twit:
 
     def initTwitterAgent(self, file, consumer_key, consumer_secret):
 
-        oauth_token, oauth_secret = twitter.read_token_file(file)
+        oauth_token, oauth_secret = twitter_api.read_token_file(file)
 
-        return twitter.Twitter(auth=twitter.OAuth(
+        return twitter_api.Twitter(auth=twitter_api.OAuth(
             oauth_token, oauth_secret, consumer_key, consumer_secret))
 
 

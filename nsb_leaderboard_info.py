@@ -14,75 +14,61 @@ import datetime
 #customMusic
 #True, False
 
+def extractCharacter(name):
+    names = ['all char', 'story mode', 'aria', 'bard', 'bolt',
+            'coda', 'dorian', 'dove', 'eli', 'melody', 'monk']
+    for i in names:
+        if i in name:
+            return i
+    if checkCadence(name):
+        return 'cadence'
+    return None
+
+
+def checkCadence(name):
+    delete = ['hardcore', 'seeded', 'deathless',
+            'speedrun', 'co-op', 'custom', ' ']
+    for i in delete:
+        name = name.replace(i, '')
+    return name == ''
+
+
+def checkSeeded(name):
+    return 'seeded' in name
+
+
+def checkCoop(name):
+    return 'co-op' in name
+
+
+def checkCustomMusic(name):
+    return 'custom' in name
+
+
+def extractMode(name):
+    if '/' in name:
+        return 'daily'
+    if 'speedrun' in name and 'deathless' in name:
+        return None
+    if 'deathless' in name:
+        return 'deathless'
+    if 'speedrun' in name:
+        return 'speed'
+    if 'hardcore' in name:
+        return 'score'
+    return None
+
+
 class leaderboard_info:
 
-    def checkCadence(self, name):
-        delete = ['hardcore', 'seeded', 'deathless',
-                'speedrun', 'co-op', 'custom', ' ']
-        for i in delete:
-            name = name.replace(i, '')
-        return name == ''
-
-
-    def checkSeeded(self, name):
-        return 'seeded' in name
-
-
-    def checkCoop(self, name):
-        return 'co-op' in name
-
-
-    def checkCustomMusic(self, name):
-        return 'custom' in name
-
-
-    def extractCharacter(self, name):
-        names = ['all char', 'story mode', 'aria', 'bard', 'bolt',
-                'coda', 'dorian', 'dove', 'eli', 'melody', 'monk']
-        for i in names:
-            if i in name:
-                return i
-        if self.checkCadence(name):
-            return 'cadence'
-        return None
-
-
-    def extractMode(self, name):
-        if '/' in name:
-            return 'daily'
-        if 'speedrun' in name and 'deathless' in name:
-            return None
-        if 'deathless' in name:
-            return 'deathless'
-        if 'speedrun' in name:
-            return 'speed'
-        if 'hardcore' in name:
-            return 'score'
-        return None
-
-
-    def daily(self):
-        return self.mode == 'daily'
-
-    
-    def extractDate(self, name):
-        if not self.daily():
-            return None
-        sp = name.split()[0]
-        sp = sp.split('/')
-        return datetime.date(int(sp[2]), int(sp[1]), int(sp[0]))
-
-
-    
     def __init__(self, name):
-
         name = name.lower()
-        self.character = self.extractCharacter(name)
-        self.mode = self.extractMode(name)
+        self.character = extractCharacter(name)
+        self.mode = extractMode(name)
         self.date = self.extractDate(name)
-        self.seeded = self.checkSeeded(name)
-        self.coop = self.checkCoop(name)
-        self.customMusic = self.checkCustomMusic(name)
+        self.seeded = checkSeeded(name)
+        self.coop = checkCoop(name)
+        self.customMusic = checkCustomMusic(name)
 
     
     def __str__(self):
@@ -101,11 +87,7 @@ class leaderboard_info:
         result += ' ' + self.mode
         return result.title()
 
-
-    def filename(self):
-        return str(self).lower().replace(' ', '_')
-    
-    def debugString(self):
+    def __repr__(self):
         name = ''
         name += 'character: ' + str(self.character) + '\n'
         name += 'mode: ' + str(self.mode) + '\n'
@@ -115,7 +97,19 @@ class leaderboard_info:
         return name
 
 
-    def max(self):
+    def daily(self):
+        return self.mode == 'daily'
+
+    
+    def extractDate(self, name):
+        if not self.daily():
+            return None
+        sp = name.split()[0]
+        sp = sp.split('/')
+        return datetime.date(int(sp[2]), int(sp[1]), int(sp[0]))
+
+
+    def maxLeaderboardEntries(self):
         #if self.customMusic:
             #return 1
         if self.coop:
@@ -133,7 +127,9 @@ class leaderboard_info:
         if self.mode == 'daily':
             return 3
         return None
-
+    
+    def maxCompareEntries(self):
+        return 100
     
     def include(self):
         if self.customMusic:

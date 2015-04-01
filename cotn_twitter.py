@@ -5,10 +5,11 @@ import time
 from nsb_twitter import *
 import nsb_leaderboard
 import nsb_steam
+import datetime
 
 debugPath = False
-overWriteOld = True
-tweet = True
+overWriteOld = False
+tweet = False
 
 if not debugPath:
     basePath = '/home/hatten/Var/cotn/'
@@ -35,15 +36,21 @@ def update():
     root = getRoot(boardFile)
 
     for i in range(3, len(root)):
-        name = root[i][2].text
-        lbid = root[i][1].text
+        #name = root[i][2].text
+        #lbid = root[i][1].text
         #print(name,lbid)
-        board = nsb_leaderboard.leaderboard(name, lbid)
+        board = nsb_leaderboard.leaderboard(root[i], currPath, lastPath)
         if board.include():
-            nsb_steam.downloadBoard(currPath, 1, 100)
-            ids = diffingIds(board)
-            for id in ids:
-                composeMessage(id, board, tweet, True)
+            #nsb_steam.downloadBoard(lbid, currPath, 1, 100)
+            board.download()
+            board.read()
+            board.read_hist()
+            for entry in board.diffingEntries():
+                message = composeMessage(entry, board)
+                if tweet:
+                    twitit.postTweet(message)
+                if True:
+                    print(message)
             if overWriteOld:
                 move(lbid)
             #break
@@ -63,46 +70,6 @@ def move(lbid, path1=currPath, path2=lastPath):
 
 
 
-
-def diffingIds(board, path1=currPath, path2=lastPath):
-    if not os.path.isfile(path1 + lbid + '.xml'):
-        print(lbid, 'not existing in tmp')
-        return []
-
-    root1 = getRoot(path1 + lbid + '.xml')
-
-    if not os.path.isfile(path2 + lbid + '.xml'):
-        print(lbid, 'not existing in last')
-        return []
-    root2 = getRoot(path2 + lbid + '.xml')
-
-    ids = []
-    maxIndex = board.max()
-    lbid = board.lbid
-
-    #assume entries is at the same index in both files
-    #incorrent assumption, the field 'resultCount'
-    #is removed when a leaderboard gets more than 100 entries
-    index = getEntryIndex(root1)
-    index2 = getEntryIndex(root2)
-    for i in range(0, min(maxIndex, len(root1[index]))):
-        entry = root1[index][i]
-    #for entry in root1[index]:
-        steamid, score, rank = extractEntry(entry)
-        found = False
-        for entry in root2[index2]:
-            steamid2, score2, rank2 = extractEntry(entry)
-            if steamid == steamid2:
-                found = True
-                if score != score2:
-                    ids.append([steamid, score, score2, rank, rank2])
-                break
-        if found == False:
-            ids.append([steamid, score, -1, rank, -1])
-
-
-    return ids
-
 def nth(i):
     if i == 1:
         return 'st'
@@ -113,39 +80,40 @@ def nth(i):
     else:
         return 'th'
 
-def composeMessage(person, board, tweet=False, debug=True):
-    steamid = person[0]
-    score = person[1]
-    prevScore = person[2]
-    rank = person[3]
-    prevRank = person[4]
-    name = nsb_steam.steamname(steamid)
+def composeMessage(person, board):
+    name = nsb_steam.steamname(person.steamid)
     if board.toofzSupport():
-        url = board.toofzUrl()
+        url = board.toofzUrl() + ' '
     else:
         url = ''
 
-    if board.mode == 'speed':
-        time = scoreAsMilliseconds(score)
-        prevTime = scoreAsMilliseconds(prevScore) if prevScore != -1 else -1
+    if board.mode() == 'speed':
+        time = scoreAsMilliseconds(person.score)
+        prevTime = scoreAsMilliseconds(person.prevScore) if person.hasHist else -1
 
         relTime = relativeTime(time, prevTime)
         strScore = formatTime(time) + relTime
-    elif board.mode == 'deathless':
-        relScore = relativeProgress(score, prevScore)
-        strScore = formatProgress(score) + relScore
+    elif board.mode() == 'deathless':
+        strScore = formatProgress(person.score)
+        if person.hasHist:
+            strScore += relativeProgress(person.score, person.prevScore)
     else:
-        relScore = relativeScore(score, prevScore)
-        strScore = str(score) + relScore + ' gold'
+        strScore = str(person.score)
+        if person.hasHist:
+            strScore += relativeScore(person.score, person.prevScore)
+        strScore += ' gold'
 
 
-    if rank != prevRank:
+    if person.rank != person.prevRank:
         inter1 = ' claims rank '
-        inter2 = relativeRank(rank, prevRank) + ' in '
+        if person.hasHist:
+            inter2 = relativeRank(person.rank, person.prevRank) + ' in '
+        else:
+            inter2 = ' in '
         inter3 = ' with '
     else:
         inter1 = ', '
-        inter2 = nth(rank) + ' in '
+        inter2 = nth(person.rank) + ' in '
         inter3 = ', improves '
         relRank = ''
         if board.mode == 'score':
@@ -158,16 +126,12 @@ def composeMessage(person, board, tweet=False, debug=True):
 
 
 
-    tag = ' #necrodancer'
-    twitterHandle = nsb_steam.getTwitterHandle(steamid, twitit)
+    tag = '#necrodancer'
+    twitterHandle = nsb_steam.getTwitterHandle(person.steamid, twitit)
     if twitterHandle:
         name = '.@' + twitterHandle
     
-    message = name + inter1 + str(rank) + inter2 + str(board) + inter3 + strScore + ' ' + url + tag
-    if tweet:
-        twitit.postTweet(message)
-    if debug:
-        print(message)
+    return name + inter1 + str(person.rank) + inter2 + str(board) + inter3 + strScore + ' ' + url + tag
 
 
 def printPlayer(name, rank, score):
@@ -185,8 +149,35 @@ def getEntryIndex(root):
             return index
     return -1
 
+
+def postYesterday():
+    postDaily(datetime.date.today() - datetime.timedelta(days=1))
+
+
+def postDaily(date, path=currPath):
+    nsb_steam.downloadIndex()
+    root = getRoot(boardFile)
+
+    for i in range(3, len(root)):
+        board = nsb_leaderboard.leaderboard(root[i])
+        if not board.daily():
+            continue
+        if board.date() == date:
+            board.fetch()
+
+            for entry in board.topEntries(3):
+                message = composeMessage(entry, board)
+                if tweet:
+                    twitit.postTweet(message)
+                if True:
+                    print(message)
+            break
+
+
+
+#TODO: broken
 def printBoard(lbid, path=currPath, start=1, end=10):
-    downloadBoard(lbid, currPath, start, end)
+    nsb_steam.downloadBoard(lbid, currPath, start, end)
     root = getRoot(path + lbid + '.xml')
     index = getEntryIndex(root)
     for entry in root[index]:
@@ -276,7 +267,8 @@ def delete20():
         TWITTER_AGENT.statuses.destroy(id=int(a[i]['id_str']))
 #print(TWITTER_AGENT.users.show(screen_name='necro_score_bot'))
 #postTweet('Hello again')
-update()
+if __name__=="__main__":
+    update()
 #print(getTwitterHandle('76561198074553183'))
 #print(getTwitterHandle('76561197975956199'))
 #rat
