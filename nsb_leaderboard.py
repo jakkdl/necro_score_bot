@@ -58,8 +58,8 @@ class leaderboard:
         return self.mode == 'daily'
 
     def extractDate(self, name):
-        if not self.daily():
-            return None
+        #if not self.daily():
+        return None
         sp = name.split()[0]
         sp = sp.split('/')
         return datetime.date(int(sp[2]), int(sp[1]), int(sp[0]))
@@ -110,6 +110,11 @@ class leaderboard:
         return None
 
     def include(self):
+        if self.character == 'dove' and self.mode != 'deathless':
+            return False
+
+
+
         if self.customMusic:
             return False
         if self.coop:
