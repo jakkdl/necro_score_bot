@@ -42,6 +42,8 @@ class leaderboard:
         return None
 
     def extractMode(self, name):
+        if '_dev' in name:
+            return None
         if '/' in name:
             return 'daily'
         if 'speedrun' in name and 'deathless' in name:
@@ -58,8 +60,8 @@ class leaderboard:
         return self.mode == 'daily'
 
     def extractDate(self, name):
-        #if not self.daily():
-        return None
+        if not self.daily():
+            return None
         sp = name.split()[0]
         sp = sp.split('/')
         return datetime.date(int(sp[2]), int(sp[1]), int(sp[0]))
