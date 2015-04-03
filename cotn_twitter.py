@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import os
 import os.path
 import time
-from nsb_twitter import *
+import nsb_twitter
 import nsb_leaderboard
 import nsb_steam
 import datetime
@@ -25,7 +25,7 @@ baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
 
-twitit = twit(os.path.expanduser(configPath + 'twitter/'))
+twitit = nsb_twitter.twitter(os.path.expanduser(configPath + 'twitter/'))
 
 
 print('start at: ', time.strftime('%c'))
@@ -36,12 +36,8 @@ def update():
     root = getRoot(boardFile)
 
     for i in range(3, len(root)):
-        #name = root[i][2].text
-        #lbid = root[i][1].text
-        #print(name,lbid)
         board = nsb_leaderboard.leaderboard(root[i], currPath, lastPath)
         if board.include():
-            #nsb_steam.downloadBoard(lbid, currPath, 1, 100)
             board.download()
             board.read()
             board.read_hist()
