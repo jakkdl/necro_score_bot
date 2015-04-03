@@ -73,6 +73,12 @@ class leaderboard:
             raise Exception('No history file to read')
         self.hist_xml = ET.parse(self.hist_path).getroot()
 
+    def create_hist(self):
+        if self.hasHistFile():
+            raise Exception('History file already exists')
+        self.download()
+        self.backup()
+
 
     def backup(self):
         os.rename(self.path, self.hist_path)
