@@ -163,7 +163,7 @@ def composeMessage(person, board, tweet=False, debug=True):
     
     message = name + inter1 + str(rank) + inter2 + str(board) + inter3 + strScore + ' ' + url + tag
     if debug:
-        print(message.encode('ascii', 'replace')
+        print(message.encode('ascii', 'replace'))
     if tweet:
         twitit.postTweet(message)
 
