@@ -5,6 +5,8 @@ import codecs
 import json
 import re
 import time
+import sys
+
 baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
