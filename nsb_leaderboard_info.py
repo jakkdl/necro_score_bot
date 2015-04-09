@@ -46,6 +46,8 @@ def checkCustomMusic(name):
 
 
 def extractMode(name):
+    if '_dev' in name:
+        return None
     if '/' in name:
         return 'daily'
     if 'speedrun' in name and 'deathless' in name:
@@ -132,6 +134,10 @@ class leaderboard_info:
         return 100
     
     def include(self):
+        if self.character == 'dove' and self.mode != 'deathless':
+            return False
+
+
         if self.customMusic:
             return False
         if self.coop and self.seeded:
