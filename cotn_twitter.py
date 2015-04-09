@@ -46,7 +46,7 @@ def update():
                 if tweet:
                     twitit.postTweet(message)
                 if True:
-                    print(message)
+                    print(message.encode('ascii', 'replace'))
             if overWriteOld:
                 move(lbid)
             #break

@@ -132,7 +132,6 @@ class leaderboard:
 
 
 
-
     def diffingEntries(self, num=None):
         result = []
 
