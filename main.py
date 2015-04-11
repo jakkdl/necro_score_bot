@@ -9,8 +9,7 @@ def read_options():
     debug = 'debug' in cl_options
     if debug:
         pprint(sorted(cl_options.items()))
-
-
+    
     global_path = nsb_config.default_global_path
     global_options = nsb_config.get_global_options(global_path)
 
@@ -27,11 +26,20 @@ def read_options():
     options.update(user_options)
     options.update(cl_options)
 
+
     return options
 
 def main():
     options = read_options()
+    
+    if options['twitter-keys'] != None:
+        path = nsb_config.evaluate_path(options['twitter-keys'])
+        twitter = nsb_twitter.twitter(path)
+    else:
+        twitter = None
 
+    if options['action'] == 'update':
+        cotn_twitter.update()
 
 
 

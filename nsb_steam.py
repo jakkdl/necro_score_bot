@@ -11,8 +11,6 @@ baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
 debugPath = False
-overWriteOld = False
-tweet = False
 
 if not debugPath:
     basePath = '/home/hatten/Var/cotn/'
@@ -77,7 +75,10 @@ def getTwitterHandle(id, twitit):
         return match
     else:
         handle = match.group('handle')
-
+    
+    if not twitit:
+        print('Warning: unverified handle')
+        return handle
     if twitit.checkTwitterHandle(handle):
         return handle
     else:
