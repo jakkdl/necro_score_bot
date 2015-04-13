@@ -7,48 +7,54 @@ import nsb_leaderboard
 import nsb_steam
 import datetime
 
-debugPath = False
-overWriteOld = False
-tweet = False
+#debugPath = False
+#overWriteOld = False
 
-if not debugPath:
-    basePath = '/home/hatten/Var/cotn/'
-else:
-    basePath = '/home/hatten/Var/cotn_debug/'
-
-boardFile = basePath + 'leaderboards.xml'
-lastPath = basePath + 'last/'
-currPath = basePath + 'tmp/'
-configPath = '~/.config/cotn/'
+#if not debugPath:
+    #basePath = '/home/hatten/Var/cotn/'
+#else:
+    #basePath = '/home/hatten/Var/cotn_debug/'
 
 baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
 
-twitit = nsb_twitter.twitter(os.path.expanduser(configPath + 'twitter/'))
 
 
-print('start at: ', time.strftime('%c'))
 
+def update(twitit, basePath, overWriteOld, tweet, debug):
+    print('start at: ', time.strftime('%c'))
 
-def update():
-    nsb_steam.downloadIndex()
+    lastPath = basePath + 'last/'
+    currPath = basePath + 'tmp/'
+
+    if not os.path.isdir(lastPath):
+        os.mkdir(lastPath)
+    if not os.path.isdir(currPath):
+        os.mkdir(currPath)
+
+    boardFile = basePath + 'leaderboards.xml'
+    nsb_steam.downloadIndex(basePath)
     root = getRoot(boardFile)
 
     for i in range(3, len(root)):
         board = nsb_leaderboard.leaderboard(root[i], currPath, lastPath)
         if board.include():
+            if debug:
+                #print(repr(board))
+                print(str(board))
             board.download()
             board.read()
-            board.read_hist()
-            for entry in board.diffingEntries():
-                message = composeMessage(entry, board)
-                if tweet:
-                    twitit.postTweet(message)
-                if True:
-                    print(message.encode('ascii', 'replace'))
+            if board.hasHistFile():
+                board.read_hist()
+                for entry in board.diffingEntries():
+                    message = composeMessage(entry, board)
+                    if twitit and tweet:
+                        twitit.postTweet(message)
+                    if True:
+                        print(message.encode('ascii', 'replace'))
             if overWriteOld:
-                move(lbid)
+                board.backup()
             #break
 
 
@@ -56,13 +62,13 @@ def getRoot(xmlFile):
     tree = ET.parse(xmlFile)
     return tree.getroot()
 
-def move(lbid, path1=currPath, path2=lastPath):
-    if not os.path.isdir(path2):
-        print('creating ', path2)
-        os.mkdir(path2)
-    if not os.path.isdir(path1):
-        print('source missing: ', path1)
-    os.rename(path1 + lbid + '.xml', path2 + lbid + '.xml')
+#def move(lbid):
+    #if not os.path.isdir(path2):
+        #print('creating ', path2)
+        #os.mkdir(path2)
+    #if not os.path.isdir(path1):
+        #print('source missing: ', path1)
+    #os.rename(path1 + lbid + '.xml', path2 + lbid + '.xml')
 
 
 
@@ -146,11 +152,11 @@ def getEntryIndex(root):
     return -1
 
 
-def postYesterday():
+def postYesterday(path):
     postDaily(datetime.date.today() - datetime.timedelta(days=1))
 
 
-def postDaily(date, path=currPath):
+def postDaily(date, path):
     nsb_steam.downloadIndex()
     root = getRoot(boardFile)
 
@@ -172,7 +178,7 @@ def postDaily(date, path=currPath):
 
 
 #TODO: broken
-def printBoard(lbid, path=currPath, start=1, end=10):
+def printBoard(lbid, path, start=1, end=10):
     nsb_steam.downloadBoard(lbid, currPath, start, end)
     root = getRoot(path + lbid + '.xml')
     index = getEntryIndex(root)
@@ -252,9 +258,6 @@ def relativeScore(newScore, prevScore):
 
 
 #printTop10('695404')
-
-if not os.path.isdir(basePath):
-    os.mkdir(basePath)
 
 def delete20():
     a = TWITTER_AGENT.statuses.user_timeline(screen_name='necro_score_bot')

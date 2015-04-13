@@ -10,26 +10,24 @@ import sys
 baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
-debugPath = False
+#debugPath = False
 
-if not debugPath:
-    basePath = '/home/hatten/Var/cotn/'
-else:
-    basePath = '/home/hatten/Var/cotn_debug/'
+#if not debugPath:
+    #basePath = '/home/hatten/Var/cotn/'
+#else:
+    #basePath = '/home/hatten/Var/cotn_debug/'
 
-boardFile = basePath + 'leaderboards.xml'
-lastPath = basePath + 'last/'
-currPath = basePath + 'tmp/'
-configPath = '~/.config/cotn/'
+#lastPath = basePath + 'last/'
+#currPath = basePath + 'tmp/'
+#configPath = '~/.config/cotn/'
 
-def readConfig(file):
-    f = open(os.path.expanduser(configPath + file))
+def readConfig(path):
+    f = open(path)
     result = f.read()
     f.close()
     return result.rstrip()
 
 
-STEAMKEY = readConfig('steamkey')
 
 
 def fetchUrl(url, path=None):
@@ -50,6 +48,7 @@ def fetchUrl(url, path=None):
         except:
             tries -= 1
             print('Catched unexpected error: "' + str(sys.exc_info()[0]) + '" fetching', url, 'trying', tries, 'more times in 5 seconds')
+            print(sys.exc_info())
             time.sleep(5)
             if tries == 0:
                 raise LookupError('Failed to fetch leaderboard at ' + url)
@@ -63,7 +62,8 @@ def decodeResponse(response):
     text = data.decode('utf-8')
     return text
 
-def downloadIndex():
+def downloadIndex(path):
+    boardFile = path + 'leaderboards.xml'
     fetchUrl(leaderboardsurl, boardFile)
 
 def getTwitterHandle(id, twitit):
@@ -85,7 +85,8 @@ def getTwitterHandle(id, twitit):
         print(handle, 'in steam profile but not valid')
         return None
 
-def steamname(steam_id):
+def steamname(steam_id, path):
+    STEAMKEY = readConfig(path)
     url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%d'%(STEAMKEY, steam_id)
     response = fetchUrl(url)
     reader = codecs.getreader('utf-8')

@@ -1,6 +1,10 @@
-import nsb_config
+import os
 import os.path
 from pprint import pprint
+
+import nsb_config
+import nsb_twitter
+import cotn_twitter
 
 def read_options():
     #Will exit here if --help is supplied
@@ -26,20 +30,30 @@ def read_options():
     options.update(user_options)
     options.update(cl_options)
 
-
+    if debug:
+        pprint(sorted(options.items()))
     return options
 
 def main():
     options = read_options()
+    debug = options['debug']
+    dry_run = options['dry-run']
+
     
-    if options['twitter-keys'] != None:
-        path = nsb_config.evaluate_path(options['twitter-keys'])
+    if options['twitter_keys'] != None:
+        path = nsb_config.evaluate_path(options['twitter_keys'], True)
         twitter = nsb_twitter.twitter(path)
     else:
         twitter = None
 
     if options['action'] == 'update':
-        cotn_twitter.update()
+        path = nsb_config.evaluate_path(options['data'], True)
+        if not os.path.isdir(path):
+            print("Data directory doesn't exist, Creating" + path)
+            os.mkdir(path)
+        if debug:
+            print(path)
+        cotn_twitter.update(twitter, path, options['dry-run'], options['tweet'], debug)
 
 
 

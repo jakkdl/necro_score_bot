@@ -168,5 +168,8 @@ class leaderboard:
     def __str__(self):
         return str(self.info)
 
+    def __repr__(self):
+        return repr(self.info)
+
     def include(self):
         return self.info.include()
