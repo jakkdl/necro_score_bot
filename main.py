@@ -3,30 +3,28 @@ import os
 import os.path
 from pprint import pprint
 
-from nsb_config import options
+import nsb_config
 import nsb_twitter
 import cotn_twitter
 
 
 def main():
-    pprint(options)
+    nsb_config.options = nsb_config.read_options()
+    options = nsb_config.options
     debug = options['debug']
     dry_run = options['dry-run']
 
     
-    if options['twitter_keys'] != None:
-        twitter = nsb_twitter.twitter(path)
+    if options['tweet']:
+        twitter = nsb_twitter.twitter(options['twitter_keys'])
     else:
         twitter = None
 
     if options['action'] == 'update':
-        path = nsb_config.evaluate_path(options['data'], True)
-        if not os.path.isdir(path):
+        if not os.path.isdir(options['data']):
             print("Data directory doesn't exist, Creating" + path)
-            os.mkdir(path)
-        if debug:
-            print(path)
-        cotn_twitter.update(twitter, path, options['dry-run'], options['tweet'], debug)
+            os.mkdir(options['data'])
+        cotn_twitter.update(twitter)
 
 
 

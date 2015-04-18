@@ -2,8 +2,10 @@ import argparse
 import configparser
 import os
 import sys
+from pprint import pprint
 
 
+options = {}
 
 
 ########################## CONFIG FILE SETTINGS ###########################
@@ -148,10 +150,15 @@ def _get_config_args(path, expected_entries, tolerate_missing_file, tolerate_mis
     return result
 
 def evaluate_paths(_options):
-    _options['twitter_keys'] = 
-        evaluate_path(_options['twitter_keys'], True)
+    _options['twitter_keys'] = evaluate_path(_options['twitter_keys'], True)
 
     _options['data'] = evaluate_path(_options['data'], True)
+
+    _options['config'] = evaluate_path(_options['config'], True)
+
+    _options['steam_key'] = evaluate_path(_options['steam_key'], False)
+
+    return _options
 
 
 def read_options():
@@ -160,6 +167,7 @@ def read_options():
 
     debug = cl_options['debug']
     if debug:
+        print("cl_options: ", end='')
         pprint(sorted(cl_options.items()))
     
     global_path = default_global_path
@@ -177,15 +185,16 @@ def read_options():
     _options = global_options.copy()
     _options.update(user_options)
     _options.update(cl_options)
+
     
     _options = evaluate_paths(_options)
 
     if debug:
-        pprint(sorted(options.items()))
+        print("all_options: ", end='')
+        pprint(sorted(_options.items()))
 
     return _options
 
 
 
 
-options = read_options()
