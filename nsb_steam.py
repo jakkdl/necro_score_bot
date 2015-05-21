@@ -7,27 +7,7 @@ import re
 import time
 import sys
 
-baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
-leaderboardsurl = baseUrl + '?xml=1'
-
-#debugPath = False
-
-#if not debugPath:
-    #basePath = '/home/hatten/Var/cotn/'
-#else:
-    #basePath = '/home/hatten/Var/cotn_debug/'
-
-#lastPath = basePath + 'last/'
-#currPath = basePath + 'tmp/'
-#configPath = '~/.config/cotn/'
-
-def readConfig(path):
-    f = open(path)
-    result = f.read()
-    f.close()
-    return result.rstrip()
-
-
+#from nsb_config import options
 
 
 def fetchUrl(url, path=None):
@@ -55,7 +35,11 @@ def fetchUrl(url, path=None):
 
 
 def boardUrl(lbid, start, end):
+    baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
     return baseUrl + str(lbid) + '/?xml=1&start=%d&end=%d'%(start, end)
+
+def leaderboardUrl():
+    return 'http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
 
 def decodeResponse(response):
     data = response.read()
@@ -85,8 +69,9 @@ def getTwitterHandle(id, twitit):
         print(handle, 'in steam profile but not valid')
         return None
 
-def steamname(steam_id, path):
-    STEAMKEY = readConfig(path)
+def steamname(steam_id, key):
+    #STEAMKEY = options['steam_key']
+    STEAMKEY = key
     url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%d'%(STEAMKEY, steam_id)
     response = fetchUrl(url)
     reader = codecs.getreader('utf-8')

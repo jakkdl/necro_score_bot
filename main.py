@@ -3,28 +3,44 @@ import os
 import os.path
 from pprint import pprint
 
-import nsb_config
+from nsb_config import options
+from nsb_config import default_global_path
 import nsb_twitter
 import cotn_twitter
 
 
 def main():
-    nsb_config.options = nsb_config.read_options()
-    options = nsb_config.options
     debug = options['debug']
     dry_run = options['dry-run']
 
     
-    if options['tweet']:
+    if options['twitter_keys'] != None:
         twitter = nsb_twitter.twitter(options['twitter_keys'])
     else:
         twitter = None
+    
 
-    if options['action'] == 'update':
-        if not os.path.isdir(options['data']):
-            print("Data directory doesn't exist, Creating" + path)
-            os.mkdir(options['data'])
+
+    if options['action'] == 'init':
+        print('copying', default_global_path, 'to', options['config'])
+        if not options['dry-run']:
+            shutil.copy(default_global_path, options['config'])
+    
+    elif options['action'] == 'update':
         cotn_twitter.update(twitter)
+    
+    elif options['action'] == 'postDaily':
+        cotn_twitter.postYesterday(twitter)
+
+    elif options['action'] == 'printBoard':
+        cotn_twitter.printBoard()
+
+    elif options['action'] == 'updateJson':
+        cotn_twitter.updateJson(twitter)
+    
+    elif options['action'] == 'none':
+        print("exiting")
+
 
 
 

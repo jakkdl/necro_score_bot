@@ -5,7 +5,6 @@ import sys
 from pprint import pprint
 
 
-options = {}
 
 
 ########################## CONFIG FILE SETTINGS ###########################
@@ -20,7 +19,8 @@ _expect_common_config = [('dry-run', bool),
                          ('data', str),
                          ('debug', bool),
                          ('steam_key', str),
-                         ('twitter_keys', str)
+                         ('twitter_keys', str),
+                         ('json_urls', str)
                          ]
 
 _expect_global_config = _expect_common_config + [('config', str)]
@@ -34,20 +34,35 @@ _expect_user_config = _expect_common_config
 _tolerate_missing_user_entries = True
  
 ####################### COMMAND-LINE ARGS SETTINGS ########################
+
+def _bool(string):
+    if string.lower() == 'true':
+        return True
+    elif string.lower() == 'false':
+        return False
+    msg = "%r is not a boolean" % string
+    raise argparse.ArgumentTypeError(msg)
+
+def _dir(string):
+    string = os.path.expanduser(string)
+    if not os.path.isdir(string):
+        print('Creating directory', string)
+        os.mkdir(string)
+    return string
  
 _parser = argparse.ArgumentParser()
  
 # commands
 _parser.add_argument('action',
                      help='action to perform',
-                     choices=['init', 'postDaily', 'update', 'none'])
+                     choices=['init', 'postDaily', 'update', 'printBoard', 'none', 'updateJson'])
  
 # flags
 _parser.add_argument('--config', help='specify config path',
                      metavar='DIRECTORY')
  
 _parser.add_argument('--data', help='specify data path',
-                     metavar='DIRECTORY')
+                     metavar='DIRECTORY', type=_dir)
 
 _parser.add_argument('--steam-key', help='specify file with steam keys',
                      metavar='FILE')
@@ -59,14 +74,20 @@ _parser.add_argument('--twitter-keys', help='Specify directory with twitter keys
 _parser.add_argument('--dry-run', help="Don't tweet, download or change any files",
                      action='store_true', default=False, dest='dry-run')
  
+_parser.add_argument('--handle-new', help="Handle boards without history",
+                     action='store_true', default=False, dest='handle-new')
+ 
 _parser.add_argument('--debug', help='display debug messages',
                      action='store_true', default=False)
  
 _parser.add_argument('--tweet', help='enable tweeting',
                      action='store_true', default=False)
+
+_parser.add_argument('--backup', help='backup files to history after downloading',
+                     metavar='bool', type=_bool)
 ###########################################################################
  
- 
+
 def get_command_line_args():
     args = _parser.parse_args().__dict__
     return {k: v for k, v in args.items()
@@ -149,17 +170,39 @@ def _get_config_args(path, expected_entries, tolerate_missing_file, tolerate_mis
  
     return result
 
-def evaluate_paths(_options):
-    _options['twitter_keys'] = evaluate_path(_options['twitter_keys'], True)
+def readFile(path):
+    f = open(path)
+    result = f.read()
+    f.close()
+    return result.rstrip()
 
-    _options['data'] = evaluate_path(_options['data'], True)
 
-    _options['config'] = evaluate_path(_options['config'], True)
+def createDir(path, options):
+    if not os.path.isdir(path):
+        print(path, "doesn't exist, creating")
+        if not options['dry-run']:
+            os.mkdir(path)
 
-    _options['steam_key'] = evaluate_path(_options['steam_key'], False)
 
-    return _options
+def evaluate_paths(options):
+    options['twitter_keys'] = evaluate_path(options['twitter_keys'], True)
 
+    options['data'] = evaluate_path(options['data'], True)
+
+    options['config'] = evaluate_path(options['config'], True)
+
+    options['steam_key'] = readFile(evaluate_path(options['steam_key'], False))
+
+    options['json_urls'] = options['json_urls'].split('\n')
+
+    options['json_urls'].remove('')
+
+    return options
+
+def create_paths(options):
+    createDir(options['data'], options)
+    createDir(options['data'] + 'curr/', options)
+    createDir(options['data'] + 'last/', options)
 
 def read_options():
     #Will exit here if --help is supplied
@@ -182,19 +225,21 @@ def read_options():
     user_options = get_user_options(user_path,
             'config' not in cl_options)
     
-    _options = global_options.copy()
-    _options.update(user_options)
-    _options.update(cl_options)
+    options = global_options.copy()
+    options.update(user_options)
+    options.update(cl_options)
 
     
-    _options = evaluate_paths(_options)
+    options = evaluate_paths(options)
+    create_paths(options)
 
     if debug:
         print("all_options: ", end='')
-        pprint(sorted(_options.items()))
+        pprint(sorted(options.items()))
 
-    return _options
-
-
+    return options
 
 
+
+
+options = read_options()
