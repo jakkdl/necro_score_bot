@@ -39,7 +39,7 @@ class leaderboard:
         self.data = self.board.parseResponse(response)
    
 
-    def topEntries(self, num):
+    def topEntries(self, num=self.board.entriesToReportOnRankDiff):
         return self.data[:num]
 
     def checkForDeleted(self, num):
