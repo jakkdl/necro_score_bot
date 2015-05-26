@@ -78,7 +78,8 @@ class leaderboard:
             num = max(pointsMax, rankMax)
 
         num = min(num, len(self.data))
-        #print(num)
+        if num == 0:
+          return []
 
         if 'steam_id' in self.data[0]:
             key = 'steam_id'
