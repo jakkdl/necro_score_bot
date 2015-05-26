@@ -81,10 +81,10 @@ def steamname(steam_id, key):
 def known_cheater(steam_id):
     file = 'known_cheaters.txt'
     if not os.path.isfile(file):
-        file = os.path.dirname(os.path.realpath(__file__)) + file
+        file = os.path.dirname(os.path.realpath(__file__)) + '/' + file
 
 
-    with open('known_cheaters.txt', 'r') as f:
+    with open(file, 'r') as f:
         for line in f:
             if int(line) == steam_id:
                 print(steam_id, 'is cheater')
