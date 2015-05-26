@@ -20,9 +20,9 @@ class leaderboard:
         self._name = name
         self.name = readable_name(name)
 
-
-        self.url = 'http://www.necrolab.com/api/' + name
-        self._url = self.url + '/latest_rankings'
+        baseurl = 'http://www.necrolab.com/'
+        self.url = baseurl + name
+        self._url = baseurl + 'api/' + name + '/latest_rankings'
 
         self.date = None
 
@@ -57,7 +57,7 @@ class leaderboard:
     def entriesToPrivateReportOnRankDiff(self):
         return 100
 
-    def report(self, person, diff, twitter=None):
+    def report(self, person, twitter=None):
         if float(person['histPoints']) >= person['points']:
 
             return False
@@ -86,5 +86,8 @@ class leaderboard:
     def relativePoints(self, points, prevPoints):
         return nsb_format_points.relativeScore(float(points), float(prevPoints))
 
-        
-
+    def impossiblePoints(self, person):
+        return False
+    
+    def getUrl(self, person):
+        return self.url

@@ -187,7 +187,7 @@ class steam_board:
 
     
     def toofzChar(self, char):
-        if char == 'all-char':
+        if char == 'all char':
             return 'all'
         if char == 'story mode':
             return 'story'
@@ -236,6 +236,7 @@ class steam_board:
         return 100
 
     def report(self, person, twitter):
+
         if 'histRank' not in person:
             if person['rank'] <= self.entriesToReportOnRankDiff():
                 return True
@@ -257,6 +258,7 @@ class steam_board:
         if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
             twitter_handle = self.getTwitterHandle(person, twitter)
             if twitter_handle:
+                person['twitter_username'] = twitter_handle
                 return True
 
 
@@ -284,6 +286,11 @@ class steam_board:
         if self._mode == 'deathless':
             return nsb_format_points.relativeProgress(points, prevPoints)
 
+    def impossiblePoints(self, person):
+        if self._mode == 'score' and person['points'] > 40000:
+            return True
+        return False
+
     def unit(self):
         if self._mode == 'score':
             return 'gold'
@@ -295,4 +302,6 @@ class steam_board:
         if self._mode == 'speed':
             return 'time'
         return None
-
+    
+    def getUrl(self, person):
+        return self.url + '?id=' + str(person['steam_id'])

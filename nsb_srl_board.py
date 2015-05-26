@@ -39,16 +39,28 @@ class leaderboard:
     def entriesToPrivateReportOnRankDiff(self):
         return 100
 
-    def report(self, person, diff=0, twitter=None):
+    def report(self, person, twitter=None):
+        if 'histRank' not in person:
+            if person['rank'] <= self.entriesToReportOnRankDiff():
+                return True
+            if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
+                twitter_handle = self.getTwitterHandle(person, twitter)
+                if twitter_handle:
+                    return True
+            return False
+
+        #if the person haven't improved points, return false
         if person['histPoints'] >= person['points']:
             return False
 
-        if person['histRank'] <= person['rank'] + diff:
+        #if the person haven't improved rank, return false
+        if person['histRank'] <= person['rank']:
             return False
 
+        #Check for public tweet
         if person['rank'] <= self.entriesToReportOnRankDiff():
             return True
-
+        #Check for private tweet
         if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
             twitter_handle = self.getTwitterHandle(person, twitter)
             if twitter_handle:
@@ -74,4 +86,9 @@ class leaderboard:
 
     def relativePoints(self, points, prevPoints):
         return nsb_format_points.relativeScore(float(points), float(prevPoints))
- 
+
+    def impossiblePoints(self, person):
+        return False
+    
+    def getUrl(self, person):
+        return self.url

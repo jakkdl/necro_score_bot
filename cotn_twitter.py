@@ -67,7 +67,6 @@ def update(twitter):
             
             if options['backup']:
                 board.write()
-            #break
 
 def updateJson(twitter):
     for url in options['json_urls']:
@@ -189,16 +188,13 @@ def composeMessage(person, board, twitter, nodot=False):
         hasHist = False
         histPoints = -1
         histRank = -1
-
-    if board.board.url is None:
-        url = ''
-    else:
-        url = board.board.url
+    
+    url = board.getUrl(person)
 
     strPoints = board.formatPoints(person)
 
 
-    if rank < histRank:
+    if rank < histRank or histRank == -1:
         inter1 = ' claims rank '
         if hasHist:
             inter2 = nsb_format_points.relativeRank(rank, histRank) + ' in '
@@ -234,6 +230,10 @@ def composeMessage(person, board, twitter, nodot=False):
         name = person['name']
     else:
         name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
+    if 'steam_id' in person:
+        if nsb_steam.known_cheater(person['steam_id']) or board.impossiblePoints(person):
+            name = '@heatherary, cheater: ' + name
+            tag = ''
 
 
     return name + inter1 + str(rank) + inter2 + str(board) + inter3 + strPoints + ' ' + url + tag

@@ -154,4 +154,8 @@ class leaderboard:
     def getTwitterHandle(self, person, twitter):
         return self.board.getTwitterHandle(person, twitter)
 
+    def impossiblePoints(self, person):
+        return self.board.impossiblePoints(person)
 
+    def getUrl(self, person):
+        return self.board.getUrl(person)
