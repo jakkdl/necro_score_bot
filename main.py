@@ -38,6 +38,9 @@ def main():
     elif options['action'] == 'updateJson':
         cotn_twitter.updateJson(twitter)
     
+    elif options['action'] == 'updateSRL':
+        cotn_twitter.updateSRL(twitter)
+    
     elif options['action'] == 'none':
         print("exiting")
 

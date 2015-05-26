@@ -7,6 +7,7 @@ import datetime
 import nsb_leaderboard
 import nsb_necrolab_board
 import nsb_steam_board
+import nsb_srl_board
 import nsb_steam
 import nsb_index
 import nsb_database
@@ -50,6 +51,9 @@ def update(twitter):
                 deletedEntries = board.checkForDeleted(90)
                 if deletedEntries > 0:
                     print("Found", deletedEntries, "deleted entries in", str(board))
+                if deletedEntries > 40:
+                    print(board.data)
+                    raise Exception('ERROR: too many deleted entries')
                 entries = board.diffingEntries(diff=deletedEntries)
             else:
                 entries = board.topEntries()
@@ -95,6 +99,29 @@ def updateJson(twitter):
             #print(message)
         if options['backup']:
             board.write()
+
+def updateSRL(twitter):
+    srl_board = nsb_srl_board.leaderboard()
+    board = nsb_leaderboard.leaderboard(srl_board)
+    board.fetch()
+
+    if board.hasFile():
+        board.read()
+        entries = board.diffingEntries()
+    else:
+        entries = board.topEntries(board.board.entriesToReportOnRankDiff())
+
+
+    for entry in entries:
+        if board.includePublic(entry):
+            message = composeMessage(entry, board, twitter)
+            if options['tweet']:
+                twitter.postTweet(message)
+            print(message.encode('ascii', 'replace'))
+        #message = composeMessage(entry, board, twitter)
+        #print(message)
+    if options['backup']:
+        board.write()
 
 def postYesterday(twitter):
     postDaily(datetime.date.today() - datetime.timedelta(days=1), twitter)
@@ -148,19 +175,19 @@ def nth(i):
     else:
         return 'th'
 
-def composeMessage(person, board, twitter):
+def composeMessage(person, board, twitter, nodot=False):
     #if 'steam_id' in person:
         #person['steamid'] = person['steam_id']
         #person['score'] = float(person['points'])
 
 
 
-    score = int(person['points'])
+    score = person['points']
     rank = int(person['rank'])
 
     if 'histPoints' in person:
         hasHist = True
-        histPoints = int(person['histPoints'])
+        histPoints = person['histPoints']
         histRank = int(person['histRank'])
     else:
         hasHist = False
@@ -195,17 +222,21 @@ def composeMessage(person, board, twitter):
 
 
     tag = ' #necrodancer'
-    if 'twitter_username' in person and person['twitter_username'] is not None:
-        twitterHandle = person['twitter_username']
-    else:
-        twitterHandle = nsb_steam.getTwitterHandle(int(person['steam_id']), twitter)
+
+
+    #TODO: yo this shit is unreadable
+    twitterHandle = board.getTwitterHandle(person, twitter)
+
     if twitterHandle:
         name = '@' + twitterHandle
         if board.includePublic(person):
             name = '.' + name
+    elif 'name' in person:
+        name = person['name']
     else:
         name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
-    
+
+
     return name + inter1 + str(rank) + inter2 + str(board) + inter3 + strPoints + ' ' + url + tag
 
 
@@ -219,7 +250,7 @@ def composeDailyMessage(persons, board, twitter):
         twitterHandle = nsb_steam.getTwitterHandle(person['steam_id'], twitter)
 
         if twitterHandle:
-            name = '.@' + twitterHandle
+            name = '@' + twitterHandle
         else:
             name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
         namescore_list.append(str(name) + ' (' + str(person['points']) + ')')

@@ -55,7 +55,7 @@ _parser = argparse.ArgumentParser()
 # commands
 _parser.add_argument('action',
                      help='action to perform',
-                     choices=['init', 'postDaily', 'update', 'printBoard', 'none', 'updateJson'])
+                     choices=['init', 'postDaily', 'update', 'printBoard', 'none', 'updateJson', 'updateSRL'])
  
 # flags
 _parser.add_argument('--config', help='specify config path',

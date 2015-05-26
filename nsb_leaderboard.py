@@ -41,7 +41,8 @@ class leaderboard:
 
     def topEntries(self, num=None):
         if num == None:
-            num = self.board.entriesToReportOnRankDiff()
+            num = self.board.entriesToPrivateReportOnRankDiff()
+        num = min(num, len(self.data))
         return self.data[:num]
 
     def checkForDeleted(self, num):
@@ -79,22 +80,29 @@ class leaderboard:
         num = min(num, len(self.data))
         #print(num)
 
+        if 'steam_id' in self.data[0]:
+            key = 'steam_id'
+        else:
+            key = 'name'
+
         for i in range(num):
             found = False
             person = self.data[i]
 
 
             for hist in self.history:
-                if person['steam_id'] == int(hist['steam_id']):
+                if person[key] == hist[key]:
                     found = True
                     save = False
-                    if i < rankMax and int(person['rank'])+diff < int(hist['rank']):
-                        save = True
-                    if i < pointsMax and int(person['points']) > int(hist['points']):
-                        save = True
-                    if save == True:
-                        person['histRank'] = hist['rank']
-                        person['histPoints'] = hist['points']
+                    person['histRank'] = hist['rank']
+                    person['histPoints'] = hist['points']
+                    if self.board.report(person, diff):
+
+                    #if i < rankMax and int(person['rank'])+diff < int(hist['rank']):
+                        #save = True
+                    #if i < pointsMax and int(person['points']) > int(hist['points']):
+                        #save = True
+                    #if save == True:
                         result.append(person)
                     break
 
@@ -141,5 +149,8 @@ class leaderboard:
                 entry['twitter_username'] = twitterHandle
                 return True
         return False
+
+    def getTwitterHandle(self, person, twitter):
+        return self.board.getTwitterHandle(person, twitter)
 
 

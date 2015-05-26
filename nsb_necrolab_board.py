@@ -31,7 +31,7 @@ class leaderboard:
         return self.name
 
     def parseResponse(self, response):
-        return nsb_database.jsonToList(response)
+        return nsb_database.necrolabToList(response)
 
     def include(self):
         return True
@@ -56,6 +56,23 @@ class leaderboard:
 
     def entriesToPrivateReportOnRankDiff(self):
         return 100
+
+    def report(self, person, diff):
+        if float(person['histPoints']) >= person['points']:
+
+            return False
+
+        if int(person['histRank']) <= person['rank'] + diff:
+            return False
+
+        #TODO: Add check that one of the users personal ranks have risen
+        #print(person)
+
+        if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
+            return True
+    
+    def getTwitterHandle(self, person, twitter=None):
+        return person['twitter_username']
     
     def formatPoints(self, points):
         return str(int(float(points)))

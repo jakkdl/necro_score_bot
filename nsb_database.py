@@ -51,18 +51,30 @@ def xmlToList(response, responseType):
 
     return result
 
-
-
 def jsonToList(response):
-
     data = json.loads(response.read().decode())
+    return data
+
+def necrolabToList(response):
+
+    data = jsonToList(response)
 
     for entry in data['data']:
+        entry['name'] = entry.pop('steam_username')
         for key in entry:
             entry[key] = convertIfPossible(entry[key])
 
     return data['data']
 
+
+def speedrunsliveToList(response):
+
+    data = jsonToList(response)
+
+    for entry in data['leaders']:
+        entry['points'] = entry.pop('trueskill')
+
+    return data['leaders']
 
 
 def pickle_file(data, path):

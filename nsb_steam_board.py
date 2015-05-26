@@ -2,6 +2,7 @@ import datetime
 
 import nsb_database
 import nsb_format_points
+import nsb_steam
 ##character
 #All-Char, story mode, Aria, Bard, Bolt, Cadence, Coda, Dorian, Dove, Eli,  Melody, Monk, None
 
@@ -215,7 +216,10 @@ class steam_board:
 
     def parseResponse(self, response):
         return nsb_database.xmlToList(response, 'leaderboard')
+    
 
+    def getTwitterHandle(self, person, twitter):
+        return nsb_steam.getTwitterHandle(int(person['steam_id']), twitter)
 
 
 
