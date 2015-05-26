@@ -51,7 +51,7 @@ def update(twitter):
                 deletedEntries = board.checkForDeleted(90)
                 if deletedEntries > 0:
                     print("Found", deletedEntries, "deleted entries in", str(board))
-                if deletedEntries > 40:
+                if deletedEntries > 50:
                     print(board.data)
                     raise Exception('ERROR: too many deleted entries')
                 entries = board.diffingEntries(diff=deletedEntries)

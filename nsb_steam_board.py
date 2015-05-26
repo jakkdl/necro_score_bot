@@ -234,6 +234,26 @@ class steam_board:
 
     def entriesToPrivateReportOnRankDiff(self):
         return 100
+
+    def report(self, person, diff):
+        if float(person['histPoints']) >= person['points']:
+            return False
+
+        if int(person['histRank']) <= person['rank'] + diff:
+            return False
+
+        #TODO: Add check that one of the users personal ranks have risen
+                        #print(person)
+
+        if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
+            return True
+
+        
+        if float(person['histPoints']) > person['points']:
+            if person['rank'] <= self.entriesToPrivateReportOnPointsDiff():
+                return True
+
+        return False
     
     def formatPoints(self, points):
         points = int(points)
