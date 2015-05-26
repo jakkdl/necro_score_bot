@@ -31,7 +31,7 @@ class leaderboard:
         return 0
 
     def entriesToReportOnRankDiff(self):
-        return 20
+        return 10
 
     def entriesToPrivateReportOnPointsDiff(self):
         return 0
@@ -39,15 +39,21 @@ class leaderboard:
     def entriesToPrivateReportOnRankDiff(self):
         return 100
 
-    def report(self, person, diff=0):
+    def report(self, person, diff=0, twitter=None):
         if person['histPoints'] >= person['points']:
             return False
 
         if person['histRank'] <= person['rank'] + diff:
             return False
 
-        if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
+        if person['rank'] <= self.entriesToReportOnRankDiff():
             return True
+
+        if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
+            twitter_handle = self.getTwitterHandle(person, twitter)
+            if twitter_handle:
+                person['twitter_username'] = twitter_handle
+                return True
 
         return False
 

@@ -47,19 +47,27 @@ class leaderboard:
 
     def checkForDeleted(self, num):
         deleted = 0
-        for hist in self.history[:num]:
+        #num = 150
+        #print(len(self.history))
+        #print(len(self.data))
+        #for hist in self.history[:num]:
+        for i in range(min(num, len(self.history))):
+            hist = self.history[i]
             found = False
-            for person in self.data[:num+10]:
+            for person in self.data[:num+20]:
                 if person['steam_id'] == int(hist['steam_id']):
-                    if int(person['rank']) < int(hist['rank']) + 10:
+                    if int(person['points']) >= int(hist['points']):
                     #print(self.history.index(hist), self.data.index(person))
                         found = True
+                    else:
+                        print('Found deleted entry due to less points', person)
                     break
             if found == False:
+                #deleted.append(i)
                 deleted += 1
         return deleted
 
-    def diffingEntries(self, num=None, diff=0):
+    def diffingEntries(self, num=None, twitter=None):
         if self.data == None:
             raise Exception('No data')
         if self.history == None:
@@ -68,14 +76,11 @@ class leaderboard:
         result = []
 
 
-        pointsMax = max(self.board.entriesToReportOnPointsDiff(),
-                self.board.entriesToPrivateReportOnPointsDiff())
-
         rankMax = max(self.board.entriesToReportOnRankDiff(),
                 self.board.entriesToPrivateReportOnRankDiff())
 
         if num == None:
-            num = max(pointsMax, rankMax)
+            num = rankMax
 
         num = min(num, len(self.data))
         #print(num)
@@ -96,18 +101,13 @@ class leaderboard:
                     save = False
                     person['histRank'] = hist['rank']
                     person['histPoints'] = hist['points']
-                    if self.board.report(person, diff):
-
-                    #if i < rankMax and int(person['rank'])+diff < int(hist['rank']):
-                        #save = True
-                    #if i < pointsMax and int(person['points']) > int(hist['points']):
-                        #save = True
-                    #if save == True:
+                    if self.board.report(person, twitter=twitter):
                         result.append(person)
                     break
 
             if not found:
-                result.append(person)
+                if self.board.report(person, twitter=twitter):
+                    result.append(person)
 
         return result
 
@@ -130,10 +130,10 @@ class leaderboard:
 
     def includePublic(self, entry):
         rank = int(entry['rank'])
-        if rank < self.board.entriesToReportOnRankDiff():
+        if rank <= self.board.entriesToReportOnRankDiff():
             #print('rankdiff')
             return True
-        if rank < self.board.entriesToReportOnPointsDiff():
+        if rank <= self.board.entriesToReportOnPointsDiff():
             #print('pointsdiff')
             return True
 

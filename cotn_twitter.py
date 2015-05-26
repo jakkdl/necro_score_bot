@@ -51,22 +51,19 @@ def update(twitter):
                 deletedEntries = board.checkForDeleted(90)
                 if deletedEntries > 0:
                     print("Found", deletedEntries, "deleted entries in", str(board))
-                if deletedEntries > 50:
-                    print(board.data)
-                    raise Exception('ERROR: too many deleted entries')
-                entries = board.diffingEntries(diff=deletedEntries)
+                if deletedEntries > 60:
+                    raise Exception('ERROR:', deletedEntries, 'too many deleted entries')
+                entries = board.diffingEntries(twitter=twitter)
             else:
                 entries = board.topEntries()
 
 
             for entry in entries:
                 #print(nsb_steam.steamname(int(entry['steam_id']), options['steam_key']))
-                if ( board.includePublic(entry) or
-                board.includePrivate(entry, twitter) ):
-                    message = composeMessage(entry, board, twitter)
-                    if options['tweet']:
-                        twitter.postTweet(message)
-                    print(message.encode('ascii', 'replace'))
+                message = composeMessage(entry, board, twitter)
+                if options['tweet']:
+                    twitter.postTweet(message)
+                print(message.encode('ascii', 'replace'))
             
             if options['backup']:
                 board.write()
@@ -113,11 +110,10 @@ def updateSRL(twitter):
 
 
     for entry in entries:
-        if board.includePublic(entry):
-            message = composeMessage(entry, board, twitter)
-            if options['tweet']:
-                twitter.postTweet(message)
-            print(message.encode('ascii', 'replace'))
+        message = composeMessage(entry, board, twitter)
+        if options['tweet']:
+            twitter.postTweet(message)
+        print(message.encode('ascii', 'replace'))
         #message = composeMessage(entry, board, twitter)
         #print(message)
     if options['backup']:
@@ -202,7 +198,7 @@ def composeMessage(person, board, twitter, nodot=False):
     strPoints = board.formatPoints(person)
 
 
-    if rank != histRank:
+    if rank < histRank:
         inter1 = ' claims rank '
         if hasHist:
             inter2 = nsb_format_points.relativeRank(rank, histRank) + ' in '
@@ -225,7 +221,10 @@ def composeMessage(person, board, twitter, nodot=False):
 
 
     #TODO: yo this shit is unreadable
-    twitterHandle = board.getTwitterHandle(person, twitter)
+    if 'twitter_username' in person:
+        twitterHandle = person['twitter_username']
+    else:
+        twitterHandle = board.getTwitterHandle(person, twitter)
 
     if twitterHandle:
         name = '@' + twitterHandle
