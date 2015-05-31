@@ -157,5 +157,5 @@ class leaderboard:
     def impossiblePoints(self, person):
         return self.board.impossiblePoints(person)
 
-    def getUrl(self, person):
+    def getUrl(self, person=None):
         return self.board.getUrl(person)

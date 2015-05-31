@@ -202,17 +202,19 @@ class steam_board:
     def toofzSupport(self):
         if self._coop or self._seeded or self._customMusic:
             return False
-        if self._mode == 'daily' or self._mode == None:
+        if self._mode == None:
             return False
         return True
 
     
     def toofzUrl(self):
+        base = 'http://crypt.toofz.com/Leaderboards/'
         if self.daily():
-            return str(self._date)
+            return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
+        #http://crypt.toofz.com/Leaderboards/Daily/2015/05/27
         char = self.toofzChar(self._character)
         mode = self.toofzMode(self._mode)
-        return 'http://crypt.toofz.com/Leaderboards/%s/%s'%(char, mode)
+        return base + '%s/%s'%(char, mode)
 
     def parseResponse(self, response):
         return nsb_database.xmlToList(response, 'leaderboard')
@@ -287,7 +289,7 @@ class steam_board:
             return nsb_format_points.relativeProgress(points, prevPoints)
 
     def impossiblePoints(self, person):
-        if self._mode == 'score' and person['points'] > 40000:
+        if self._mode == 'score' and person['points'] > 200000:
             return True
         return False
 
@@ -304,4 +306,6 @@ class steam_board:
         return None
     
     def getUrl(self, person):
+        if self._mode == 'daily':
+            return self.url
         return self.url + '?id=' + str(person['steam_id'])

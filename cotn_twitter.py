@@ -258,10 +258,11 @@ def composeDailyMessage(persons, board, twitter):
     
     namescores_string = ', '.join(map(str, namescore_list))
     date_string = board.board._date.strftime("%b%d")
+    url = board.getUrl()
     tag = '#necrodancer'
 
     return ' '.join(map(str, ["Top scores for", date_string, "Daily:",
-            namescores_string, tag]))
+            namescores_string, url, tag]))
 
 
 
