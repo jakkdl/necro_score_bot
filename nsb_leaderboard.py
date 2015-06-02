@@ -111,6 +111,15 @@ class leaderboard:
                     result.append(person)
 
         return result
+    
+
+    def realRank(self, rank):
+        subtract = 0
+        for i in self.data[:rank-1]:
+            if self.impossiblePoints(i) or nsb_steam.known_cheater(i['steam_id']):
+                print(i)
+                subtract += 1
+        return rank - subtract
 
 
 
