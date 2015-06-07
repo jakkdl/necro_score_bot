@@ -69,31 +69,32 @@ def update(twitter):
                 board.write()
 
 def updateJson(twitter):
-    for url in options['json_urls']:
-        name = url.split('/')[-2]
-        entry = {'name' : name, 'url' : url}
+    boards = {}
+    for name in options['json_urls']:
+        if options['debug']:
+            print(name)
 
-        necrolab_board = nsb_necrolab_board.leaderboard(name)
+        necrolab_board = nsb_necrolab_board.leaderboard(name, boards)
         board = nsb_leaderboard.leaderboard(necrolab_board)
         board.fetch()
+        boards[name] = board
 
         if board.hasFile():
             board.read()
-            entries = board.diffingEntries()
+            entries = board.diffingEntries(twitter=twitter, num=500)
         else:
             entries = board.topEntries(5)
 
 
         for entry in entries:
-            if ( board.includePublic(entry) or
-            board.includePrivate(entry, twitter) ):
-                message = composeMessage(entry, board, twitter)
-                if options['tweet']:
-                    twitter.postTweet(message)
-                print(message.encode('ascii', 'replace'))
+            message = composeMessage(entry, board, twitter)
+            if options['tweet']:
+                twitter.postTweet(message)
+            print(message.encode('ascii', 'replace'))
             #message = composeMessage(entry, board, twitter)
             #print(message)
-        if options['backup']:
+    if options['backup']:
+        for board in boards:
             board.write()
 
 def updateSRL(twitter):

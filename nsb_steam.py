@@ -87,6 +87,5 @@ def known_cheater(steam_id):
     with open(file, 'r') as f:
         for line in f:
             if int(line) == steam_id:
-                print(steam_id, 'is cheater')
                 return True
     return False

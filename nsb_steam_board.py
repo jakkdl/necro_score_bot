@@ -237,9 +237,9 @@ class steam_board:
     def entriesToPrivateReportOnRankDiff(self):
         return 100
 
-    def report(self, person, twitter):
+    def report(self, person, hist, twitter):
 
-        if 'histRank' not in person:
+        if hist is None:
             if person['rank'] <= self.entriesToReportOnRankDiff():
                 return True
             #Check for private tweet
@@ -250,12 +250,13 @@ class steam_board:
             return False
 
         #If the person haven't improved points, return false
-        if float(person['histPoints']) >= person['points']:
+        if float(hist['points']) >= person['points']:
             return False
         
         #Check for public tweet
         if person['rank'] <= self.entriesToReportOnRankDiff():
             return True
+
         #Check for private tweet
         if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
             twitter_handle = self.getTwitterHandle(person, twitter)

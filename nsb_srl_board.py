@@ -39,8 +39,8 @@ class leaderboard:
     def entriesToPrivateReportOnRankDiff(self):
         return 100
 
-    def report(self, person, twitter=None):
-        if 'histRank' not in person:
+    def report(self, person, hist, twitter=None):
+        if hist is None:
             if person['rank'] <= self.entriesToReportOnRankDiff():
                 return True
             if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
@@ -50,11 +50,11 @@ class leaderboard:
             return False
 
         #if the person haven't improved points, return false
-        if person['histPoints'] >= person['points']:
+        if hist['points'] >= person['points']:
             return False
 
         #if the person haven't improved rank, return false
-        if person['histRank'] <= person['rank']:
+        if hist['rank'] <= person['rank']:
             return False
 
         #Check for public tweet

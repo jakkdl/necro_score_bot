@@ -100,14 +100,14 @@ class leaderboard:
                 if person[key] == hist[key]:
                     found = True
                     save = False
-                    person['histRank'] = hist['rank']
-                    person['histPoints'] = hist['points']
-                    if self.board.report(person, twitter=twitter):
+                    if self.board.report(person, hist, twitter=twitter):
+                        person['histRank'] = hist['rank']
+                        person['histPoints'] = hist['points']
                         result.append(person)
                     break
 
             if not found:
-                if self.board.report(person, twitter=twitter):
+                if self.board.report(person, twitter=twitter, hist=None):
                     result.append(person)
 
         return result
@@ -115,9 +115,11 @@ class leaderboard:
 
     def realRank(self, rank):
         subtract = 0
+        if 'SRL' in str(self.board):
+            return rank
         for i in self.data[:rank-1]:
             if self.impossiblePoints(i) or nsb_steam.known_cheater(i['steam_id']):
-                print(i)
+                #print(i)
                 subtract += 1
         return rank - subtract
 

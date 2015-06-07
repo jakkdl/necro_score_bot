@@ -16,9 +16,11 @@ def readable_name(name):
 class leaderboard:
 
 
-    def __init__(self, name):
+    def __init__(self, name, other_boards):
         self._name = name
         self.name = readable_name(name)
+        if name == 'power_rankings':
+            self.boards = other_boards
 
         baseurl = 'http://www.necrolab.com/'
         self.url = baseurl + name
@@ -57,16 +59,31 @@ class leaderboard:
     def entriesToPrivateReportOnRankDiff(self):
         return 100
 
-    def report(self, person, twitter=None):
-        if float(person['histPoints']) >= person['points']:
-
+    def report(self, person, hist, twitter=None):
+        if hist is None:
+            if person['rank'] <= self.entriesToReportOnRankDiff():
+                return True
+            #Check for private tweet
+            if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
+                twitter_handle = self.getTwitterHandle(person, twitter)
+                if twitter_handle:
+                    return True
             return False
 
-        if int(person['histRank']) <= person['rank'] + diff:
+        if float(hist['points']) >= person['points']:
+            return False
+
+        if int(hist['rank']) <= person['rank']:
             return False
 
         #TODO: Add check that one of the users personal ranks have risen
-        #print(person)
+        if self._name == 'power_rankings':
+            if not self.improvedCharRankOnBoards(person, boards):
+                return False
+        elif not self.improvedCharRank(person, hist):
+            print(person['name'], 'didnt improve char rank')
+            return False
+
 
         if person['rank'] <= self.entriesToReportOnRankDiff():
             return True
@@ -77,6 +94,23 @@ class leaderboard:
 
         return False
     
+    def improvedCharRank(self, person, hist):
+        for key in person.keys():
+            if 'rank' not in key or key == 'rank':
+                continue
+            if hist[key] is None:
+                if person[key] is not None:
+                    print(person['name'], key, 'added')
+                    return True
+            elif person[key] is None:
+                print('got removed score:', person)
+            elif person[key] < hist[key]:
+                print(person['name'], key, 'improved')
+                return True
+        return False
+
+
+
     def getTwitterHandle(self, person, twitter=None):
         return person['twitter_username']
     
