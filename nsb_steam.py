@@ -41,9 +41,9 @@ def boardUrl(lbid, start, end):
 def leaderboardUrl():
     return 'http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
 
-def decodeResponse(response):
+def decodeResponse(response, re_codec='utf-8'):
     data = response.read()
-    text = data.decode('utf-8')
+    text = data.decode(re_codec)
     return text
 
 def downloadIndex(path):
@@ -52,7 +52,7 @@ def downloadIndex(path):
 
 def getTwitterHandle(id, twitit):
     url = 'http://steamcommunity.com/profiles/' + str(id)
-    text = decodeResponse(fetchUrl(url))
+    text = decodeResponse(fetchUrl(url), 'latin-1')
 
     match = re.search(r"twitter\.com\\/(?P<handle>\w+)\\\"", text)
     if match is None:
