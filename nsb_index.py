@@ -1,4 +1,4 @@
-#from nsb_config import options
+from nsb_config import options
 import nsb_steam
 import nsb_database
 

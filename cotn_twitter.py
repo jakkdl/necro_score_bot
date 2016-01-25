@@ -35,10 +35,12 @@ def update(twitter):
     for entry in index.entries():
         steam_board = nsb_steam_board.steam_board(entry)
         board = nsb_leaderboard.leaderboard(steam_board)
+        print(board)
         if steam_board.include():
+            print("hi")
             if debug:
                 #print(repr(board))
-                print(str(board))
+                print("including: ", str(board))
             if not board.hasFile() and not options['handle-new']:
                 print('New leaderboard', str(board), 'use --handle-new to use')
                 continue
