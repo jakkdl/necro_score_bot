@@ -5,7 +5,7 @@ import nsb_database
 class index:
     def __init__(self, saveToFile = True):
         #if saveToFile:
-            #self.path = options['data'] + 'leaderboards.xml'
+        self.path = options['data'] + 'leaderboards.xml'
         #else:
             #self.path = None
         self.data = None
@@ -15,8 +15,11 @@ class index:
         response = nsb_steam.fetchUrl(url)
         self.data = nsb_database.xmlToList(response=response, responseType='index')
 
-    def read(self):
+    def read_pickle(self):
         self.data = nsb_database.unpickle(self.path)
+    
+    def read_xml(self):
+        self.data = nsb_database.xmlToList_file(self.path, responseType='index')
 
     def write(self):
         nsb_database.pickle(data=self.data, path=self.path)

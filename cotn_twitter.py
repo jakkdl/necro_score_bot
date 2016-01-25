@@ -29,7 +29,7 @@ def update(twitter):
     debug = options['debug']
 
     index = nsb_index.index()
-    index.fetch()
+    index.read_xml()
 
 
     for entry in index.entries():

@@ -24,10 +24,17 @@ def convertIfPossible(data):
     return data
 
 def xmlToList(response, responseType):
-    result = []
     text = nsb_steam.decodeResponse(response)
     data = ET.fromstring(text)
+    xmlToList_internal(data, responseType)
 
+def xmlToList_file(path, responseType):
+    tree = ET.parse(path)
+    root = tree.getroot()
+    xmlToList_internal(root, responseType)
+
+def xmlToList_internal(data, responseType):
+    result = []
     if responseType == 'leaderboard':
         index = entryIndex(data)
         entries = data[index]
