@@ -26,12 +26,12 @@ def convertIfPossible(data):
 def xmlToList(response, responseType):
     text = nsb_steam.decodeResponse(response)
     data = ET.fromstring(text)
-    xmlToList_internal(data, responseType)
+    return xmlToList_internal(data, responseType)
 
 def xmlToList_file(path, responseType):
     tree = ET.parse(path)
     root = tree.getroot()
-    xmlToList_internal(root, responseType)
+    return xmlToList_internal(root, responseType)
 
 def xmlToList_internal(data, responseType):
     result = []

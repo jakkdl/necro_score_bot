@@ -30,6 +30,7 @@ def update(twitter):
 
     index = nsb_index.index()
     index.read_xml()
+    #index.fetch()
 
 
     for entry in index.entries():
