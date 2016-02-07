@@ -36,9 +36,9 @@ def update(twitter):
     for entry in index.entries():
         steam_board = nsb_steam_board.steam_board(entry)
         board = nsb_leaderboard.leaderboard(steam_board)
-        print(board)
+        #print(board)
         if steam_board.include():
-            print("hi")
+            #print("hi")
             if debug:
                 #print(repr(board))
                 print("including: ", str(board))
