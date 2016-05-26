@@ -58,7 +58,7 @@ def update(twitter):
                     raise Exception('ERROR:', deletedEntries, 'too many deleted entries')
                 entries = board.diffingEntries(twitter=twitter)
             else:
-                entries = board.topEntries()
+                entries = board.topEntries(5)
 
 
             for entry in entries:

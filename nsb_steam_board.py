@@ -142,7 +142,7 @@ class steam_board:
         if self._coop:
             return 3
         if self._seeded:
-            return 3
+            return 5
         if self._mode == 'deathless':
             return 5
         if self._mode == 'score':
@@ -175,12 +175,15 @@ class steam_board:
         if self._coop:
             return False
         
-        if self._seeded:
-            return False
 
         if self._mode == 'deathless':
             if self._character == 'all char' or self._character == 'story mode':
                 return False
+
+        if self._seeded:
+            if self._character == 'all char' or self._character == 'story mode':
+                return False
+            return True # <3 Grimy
         if self._mode != None:
             return True
         return False
@@ -200,7 +203,7 @@ class steam_board:
 
     
     def toofzSupport(self):
-        if self._coop or self._seeded or self._customMusic:
+        if self._coop or self._customMusic:
             return False
         if self._mode == None:
             return False
@@ -214,6 +217,8 @@ class steam_board:
         #http://crypt.toofz.com/Leaderboards/Daily/2015/05/27
         char = self.toofzChar(self._character)
         mode = self.toofzMode(self._mode)
+        if self._seeded:
+            return base + '%s/seeded%s'%(char, mode)
         return base + '%s/%s'%(char, mode)
 
     def parseResponse(self, response):
