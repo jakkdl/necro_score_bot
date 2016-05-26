@@ -236,10 +236,10 @@ def composeMessage(person, board, twitter, nodot=False):
         name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
     if 'steam_id' in person:
         if nsb_steam.known_cheater(person['steam_id']):
-            name = '@heatherary, cheater: ' + name
+            name = '@SmaddyDiva, cheater: ' + name
             tag = ''
         elif board.impossiblePoints(person):
-            name = '@heatherary, bugged: ' + name
+            name = '@SmaddyDiva, bugged: ' + name
             tag = ''
 
 

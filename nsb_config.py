@@ -189,7 +189,7 @@ def evaluate_paths(options):
 
     options['data'] = evaluate_path(options['data'], True)
 
-    options['config'] = evaluate_path(options['config'], True)
+    options['config'] = evaluate_path(options['config'], False)
 
     options['steam_key'] = readFile(evaluate_path(options['steam_key'], False))
 

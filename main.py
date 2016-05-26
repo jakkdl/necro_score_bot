@@ -1,6 +1,7 @@
 #!/usr/bin/python3.4
 import os
 import os.path
+import shutil
 from pprint import pprint
 
 from nsb_config import options
