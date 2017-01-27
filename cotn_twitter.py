@@ -25,7 +25,7 @@ leaderboardsurl = baseUrl + '?xml=1'
 
 def update(twitter):
     print('start at: ', time.strftime('%c'))
-    
+
     debug = options['debug']
 
     index = nsb_index.index()
@@ -69,7 +69,7 @@ def update(twitter):
                 if options['tweet']:
                     twitter.postTweet(message)
                 print(message.encode('ascii', 'replace'))
-            
+
             if options['backup']:
                 board.write()
 
@@ -194,7 +194,7 @@ def composeMessage(person, board, twitter, nodot=False):
         hasHist = False
         histPoints = -1
         histRank = -1
-    
+
     url = board.getUrl(person)
 
     strPoints = board.formatPoints(person)
@@ -238,10 +238,10 @@ def composeMessage(person, board, twitter, nodot=False):
         name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
     if 'steam_id' in person:
         if nsb_steam.known_cheater(person['steam_id']):
-            name = '@SmaddyDiva, cheater: ' + name
+            name = '@Arachness_, cheater: ' + name
             tag = ''
         elif board.impossiblePoints(person):
-            name = '@SmaddyDiva, bugged: ' + name
+            name = '@Arachness_, bugged: ' + name
             tag = ''
 
 
@@ -262,9 +262,9 @@ def composeDailyMessage(persons, board, twitter):
         else:
             name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
         namescore_list.append(str(name) + ' (' + str(person['points']) + ')')
-    
-    
-    
+
+
+
     namescores_string = ', '.join(map(str, namescore_list))
     date_string = board.board._date.strftime("%b%d")
     url = board.getUrl()
@@ -275,7 +275,7 @@ def composeDailyMessage(persons, board, twitter):
 
 
 
-    
+
 
 
 
