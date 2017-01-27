@@ -9,6 +9,9 @@ import nsb_steam
 ##Mode
 #Speed, Score,  Deathless, Daily, None
 
+##dlc
+#True, False
+
 ##seeded
 #True, False
 
@@ -31,7 +34,7 @@ def extractCharacter(name):
 
 def checkCadence(name):
     delete = ['hardcore', 'seeded', 'deathless',
-            'speedrun', 'co-op', 'custom', ' ', '_prod', '_dev']
+            'speedrun', 'co-op', 'custom', ' ', '_prod', '_dev', 'dlc']
     for i in delete:
         name = name.replace(i, '')
     return name == ''
@@ -39,6 +42,10 @@ def checkCadence(name):
 
 def checkSeeded(name):
     return 'seeded' in name
+
+
+def checkDLC(name):
+    return 'dlc' in name
 
 
 def checkCoop(name):
@@ -82,6 +89,7 @@ class steam_board:
         self._seeded = checkSeeded(name)
         self._coop = checkCoop(name)
         self._customMusic = checkCustomMusic(name)
+        self._dlc = checkDLC(name)
 
         self.name = self.nice_name()
         self._name = name
@@ -107,13 +115,16 @@ class steam_board:
         if self._seeded:
             result += ' seeded'
         result += ' ' + self._mode
+        if self._dlc:
+            result += ' Amplified'
         return result.title()
-    
+
     def __str__(self):
         return self.name
 
     def __repr__(self):
         name = ''
+        name += 'DLC: ' + str(self._dlc) + '\n'
         name += 'character: ' + str(self._character) + '\n'
         name += 'mode: ' + str(self._mode) + '\n'
         name += 'seeded: ' + str(self._seeded) + '\n'
@@ -125,7 +136,7 @@ class steam_board:
     def daily(self):
         return self._mode == 'daily'
 
-    
+
     def extractDate(self, name):
         if not self.daily():
             return None
@@ -152,12 +163,12 @@ class steam_board:
         if self._mode == 'daily':
             return 3
         return None
-    
+
     def maxCompareEntries(self):
         return 100
-    
+
     def include(self):
-        
+
         if self._availability != 'prod':
             return False
 
@@ -174,7 +185,7 @@ class steam_board:
             return False
         if self._coop:
             return False
-        
+
 
         if self._mode == 'deathless':
             if self._character == 'all char' or self._character == 'story mode':
@@ -188,7 +199,7 @@ class steam_board:
             return True
         return False
 
-    
+
     def toofzChar(self, char):
         if char == 'all char':
             return 'all'
@@ -196,12 +207,12 @@ class steam_board:
             return 'story'
         return char
 
-    
+
     def toofzMode(self, mode):
         #mode = mode.replace('score', 'hardcore')
         return mode
 
-    
+
     def toofzSupport(self):
         if self._coop or self._customMusic:
             return False
@@ -209,8 +220,9 @@ class steam_board:
             return False
         return True
 
-    
+
     def toofzUrl(self):
+        #TODO, wait for toofz to update for DLC
         base = 'http://crypt.toofz.com/Leaderboards/'
         if self.daily():
             return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
@@ -223,7 +235,7 @@ class steam_board:
 
     def parseResponse(self, response):
         return nsb_database.xmlToList(response, 'leaderboard')
-    
+
 
     def getTwitterHandle(self, person, twitter):
         return nsb_steam.getTwitterHandle(int(person['steam_id']), twitter)
@@ -257,7 +269,7 @@ class steam_board:
         #If the person haven't improved points, return false
         if float(hist['points']) >= person['points']:
             return False
-        
+
         #Check for public tweet
         if person['rank'] <= self.entriesToReportOnRankDiff():
             return True
@@ -271,7 +283,7 @@ class steam_board:
 
 
         return False
-    
+
     def formatPoints(self, points):
         points = int(points)
         if self._mode == 'speed':
@@ -281,7 +293,7 @@ class steam_board:
             return str(int(points))
         if self._mode == 'deathless':
             return nsb_format_points.formatProgress(points)
-    
+
     def relativePoints(self, points, prevPoints):
         points = int(points)
         prevPoints = int(prevPoints)
@@ -310,7 +322,7 @@ class steam_board:
         if self._mode == 'speed':
             return 'time'
         return None
-    
+
     def getUrl(self, person):
         if self._mode == 'daily':
             return self.url
