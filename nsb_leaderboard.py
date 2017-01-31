@@ -14,7 +14,7 @@ class leaderboard:
 
         self.data = None
         self.history = None
-       
+
         self.path = os.path.join(options['data'],
                 'boards', board._name + '.pickle')
 
@@ -31,13 +31,13 @@ class leaderboard:
         if self.data == None:
             raise Exception('Trying to pickle with no data read')
         nsb_database.pickle_file(data=self.data, path=self.path)
-  
+
 
     def fetch(self):
         #url = nsb_steam.boardUrl(self.lbid, 1, 100)
         response = nsb_steam.fetchUrl(self.board._url)
         self.data = self.board.parseResponse(response)
-   
+
 
     def topEntries(self, num=None):
         if num == None:
@@ -61,6 +61,7 @@ class leaderboard:
                         found = True
                     else:
                         print('Found deleted entry due to less points', person)
+                        raise Exception('ERROR: Found deleted entry due to less points', person)
                     break
             if found == False:
                 #deleted.append(i)
@@ -111,7 +112,7 @@ class leaderboard:
                     result.append(person)
 
         return result
-    
+
 
     def realRank(self, rank):
         subtract = 0
