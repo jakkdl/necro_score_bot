@@ -222,8 +222,10 @@ class steam_board:
 
 
     def toofzUrl(self):
-        #TODO, wait for toofz to update for DLC
-        base = 'http://crypt.toofz.com/Leaderboards/'
+        if self._dlc:
+            base = 'http://crypt.toofz.com/leaderboards/amplified/'
+        else:
+            base = 'http://crypt.toofz.com/leaderboards/'
         if self.daily():
             return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
         #http://crypt.toofz.com/Leaderboards/Daily/2015/05/27
