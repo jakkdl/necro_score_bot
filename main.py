@@ -1,4 +1,4 @@
-#!/usr/bin/python3.4
+#!/usr/bin/python3
 import os
 import os.path
 import shutil

@@ -244,8 +244,20 @@ def composeMessage(person, board, twitter, nodot=False):
             name = '@Arachness_, bugged: ' + name
             tag = ''
 
+    full = name + inter1 + str(board.realRank(rank)) + inter2 + str(board) + inter3 + strPoints
 
-    return name + inter1 + str(board.realRank(rank)) + inter2 + str(board) + inter3 + strPoints + ' ' + url + tag
+    length = len(full)
+    if length + 24 < 140:
+        full += ' ' + url
+        if length + 24 + len(tag) < 140:
+            full += tag
+
+    elif length > 140:
+        full = full[:140]
+    
+
+
+    return full
 
 
 
