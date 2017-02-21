@@ -3,94 +3,30 @@ import datetime
 import nsb_database
 import nsb_format_points
 import nsb_steam
-##character
-#All-Char, story mode, Aria, Bard, Bolt, Cadence, Coda, Dorian, Dove, Eli,  Melody, Monk, None
+import nsb_index
 
-##Mode
-#Speed, Score,  Deathless, Daily, None
-
-##seeded
-#True, False
-
-##coop
-#True, False
-
-#customMusic
-#True, False
-
-def extractCharacter(name):
-    names = ['all char', 'story mode', 'aria', 'bard', 'bolt',
-            'coda', 'dorian', 'dove', 'eli', 'melody', 'monk']
-    for i in names:
-        if i in name:
-            return i
-    if checkCadence(name):
-        return 'cadence'
-    return None
-
-
-def checkCadence(name):
-    delete = ['hardcore', 'seeded', 'deathless',
-            'speedrun', 'co-op', 'custom', ' ', '_prod', '_dev']
-    for i in delete:
-        name = name.replace(i, '')
-    return name == ''
-
-
-def checkSeeded(name):
-    return 'seeded' in name
-
-
-def checkCoop(name):
-    return 'co-op' in name
-
-
-def checkCustomMusic(name):
-    return 'custom' in name
-
-
-def extractMode(name):
-    if '/' in name:
-        return 'daily'
-    if 'speedrun' in name and 'deathless' in name:
-        return None
-    if 'deathless' in name:
-        return 'deathless'
-    if 'speedrun' in name:
-        return 'speed'
-    if 'hardcore' in name:
-        return 'score'
-    return None
-
-
-def extractAvailability(name):
-    if '_dev' in name:
-        return 'dev'
-    if '_prod'in name:
-        return 'prod'
-    return 'normal'
 
 class steam_board:
 
-    def __init__(self, index_entry):
-        name = index_entry['name'].lower()
+    def __init__(self, lbid):
+        self._lbid = lbid
+        self._character = nsb_index.index.character(lbid)
+        self._mode = nsb_index.index.mode(lbid)
+        self._seeded = nsb_index.index.seeded(lbid)
 
-        self._availability = extractAvailability(name)
-        self._character = extractCharacter(name)
-        self._mode = extractMode(name)
-        self._date = self.extractDate(name)
-        self._seeded = checkSeeded(name)
-        self._coop = checkCoop(name)
-        self._customMusic = checkCustomMusic(name)
+        #self._date = self.extractDate(name)
 
-        self.name = self.nice_name()
-        self._name = name
-        self._url = index_entry['url']
+        self._name = self._character
+        if self._seeded:
+            self._name += '_seeded'
+        self._name += '_' + self._mode
 
-        if self.toofzSupport():
-            self.url = self.toofzUrl()
-        else:
-            self.url = None
+
+        #self._name = self.nice_name()
+        #print(self._character, self._mode)
+
+        self.url = self.toofzUrl()
+        self._url = self.toofzUrl()
 
 
     def nice_name(self):
@@ -100,25 +36,19 @@ class steam_board:
         if self._character == None or self._mode == None:
             return 'None'
         result = self._character
-        if self._customMusic:
-            result += ' custom music'
-        if self._coop:
-            result += ' co-op'
         if self._seeded:
             result += ' seeded'
         result += ' ' + self._mode
         return result.title()
     
     def __str__(self):
-        return self.name
+        return self._name
 
     def __repr__(self):
         name = ''
         name += 'character: ' + str(self._character) + '\n'
         name += 'mode: ' + str(self._mode) + '\n'
         name += 'seeded: ' + str(self._seeded) + '\n'
-        name += 'coop: ' + str(self._coop) + '\n'
-        name += 'customMusic: ' + str(self._customMusic)
         return name
 
 
@@ -136,71 +66,14 @@ class steam_board:
         return datetime.date(int(sp[2]), int(sp[1]), int(sp[0]))
 
 
-    def maxLeaderboardEntries(self):
-        #if self._customMusic:
-            #return 1
-        if self._coop:
-            return 3
-        if self._seeded:
-            return 3
-        if self._mode == 'deathless':
-            return 5
-        if self._mode == 'score':
-            return 5
-        if self._mode == 'speed':
-            return 5
-        if self._mode == 'daily':
-            return 3
-        return None
-    
     def maxCompareEntries(self):
         return 100
     
-    def include(self):
-        
-        if self._availability != 'prod':
-            return False
-
-
-        if self._customMusic:
-            return False
-        if self._coop and self._seeded:
-            return False
-        if self._seeded and self._mode == 'deathless':
-            return False
-        if self._mode == 'daily':
-            return False
-        if self._character == None:
-            return False
-        if self._coop:
-            return False
-        
-        if self._seeded:
-            return False
-
-        if self._mode == 'deathless':
-            if self._character == 'all char' or self._character == 'story mode':
-                return False
-        if self._mode != None:
-            return True
-        return False
-
-    
-    def toofzChar(self, char):
-        if char == 'all char':
-            return 'all'
-        if char == 'story mode':
-            return 'story'
-        return char
-
-    
-    def toofzMode(self, mode):
-        #mode = mode.replace('score', 'hardcore')
-        return mode
+ 
 
     
     def toofzSupport(self):
-        if self._coop or self._seeded or self._customMusic:
+        if self._coop or self._customMusic:
             return False
         if self._mode == None:
             return False
@@ -212,15 +85,16 @@ class steam_board:
         if self.daily():
             return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
         #http://crypt.toofz.com/Leaderboards/Daily/2015/05/27
-        char = self.toofzChar(self._character)
-        mode = self.toofzMode(self._mode)
+        char = self._character
+        mode = self._mode
         return base + '%s/%s'%(char, mode)
 
     def parseResponse(self, response):
         return nsb_database.xmlToList(response, 'leaderboard')
     
-
-    def getTwitterHandle(self, person, twitter):
+    
+    @staticmethod
+    def getTwitterHandle(person, twitter):
         return nsb_steam.getTwitterHandle(int(person['steam_id']), twitter)
 
 
@@ -236,7 +110,7 @@ class steam_board:
 
     def entriesToPrivateReportOnRankDiff(self):
         return 100
-
+    
     def report(self, person, hist, twitter):
 
         if hist is None:

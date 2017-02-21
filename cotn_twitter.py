@@ -10,7 +10,6 @@ import nsb_steam_board
 import nsb_srl_board
 import nsb_steam
 import nsb_index
-import nsb_database
 import nsb_format_points
 
 from nsb_config import options
@@ -20,7 +19,14 @@ baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
 leaderboardsurl = baseUrl + '?xml=1'
 
 
+def printBoard():
+    for lbid in nsb_index.index.lbids():
+        steam_board = nsb_steam_board.steam_board(lbid)
+        board = nsb_leaderboard.leaderboard(steam_board)
 
+        board.fetch()
+        entries = board.topEntries()
+        print(entries)
 
 
 def update(twitter):
@@ -28,48 +34,48 @@ def update(twitter):
     
     debug = options['debug']
 
-    index = nsb_index.index()
-    index.read_xml()
+    #index = nsb_index.index()
+    #index.read_xml()
     #index.fetch()
 
 
-    for entry in index.entries():
-        steam_board = nsb_steam_board.steam_board(entry)
+    for lbid in nsb_index.index.lbids():
+        steam_board = nsb_steam_board.steam_board(lbid)
         board = nsb_leaderboard.leaderboard(steam_board)
         #print(board)
-        if steam_board.include():
-            #print("hi")
-            if debug:
-                #print(repr(board))
-                print("including: ", str(board))
-            if not board.hasFile() and not options['handle-new']:
-                print('New leaderboard', str(board), 'use --handle-new to use')
-                continue
+        #print("hi")
+        if debug:
+            #print(repr(board))
+            print("including: ", str(board))
+        if not board.hasFile() and not options['handle-new']:
+            print('New leaderboard', str(board), 'use --handle-new to use')
+            continue
 
-            board.fetch()
-
-
-            if board.hasFile():
-                board.read()
-                deletedEntries = board.checkForDeleted(90)
-                if deletedEntries > 0:
-                    print("Found", deletedEntries, "deleted entries in", str(board))
-                if deletedEntries > 60:
-                    raise Exception('ERROR:', deletedEntries, 'too many deleted entries')
-                entries = board.diffingEntries(twitter=twitter)
-            else:
-                entries = board.topEntries()
+        board.fetch()
 
 
-            for entry in entries:
-                #print(nsb_steam.steamname(int(entry['steam_id']), options['steam_key']))
-                message = composeMessage(entry, board, twitter)
-                if options['tweet']:
-                    twitter.postTweet(message)
-                print(message.encode('ascii', 'replace'))
-            
-            if options['backup']:
-                board.write()
+        if board.hasFile():
+            board.read()
+            deletedEntries = board.checkForDeleted(90)
+            if deletedEntries > 0:
+                print("Found", deletedEntries, "deleted entries in", str(board))
+            if deletedEntries > 60:
+                #raise Exception('ERROR:', deletedEntries, 'too many deleted entries')
+                pass
+            entries = board.diffingEntries(twitter=twitter)
+        else:
+            entries = board.topEntries()
+
+
+        for entry in entries:
+            #print(nsb_steam.steamname(int(entry['steam_id']), options['steam_key']))
+            message = composeMessage(entry, board, twitter)
+            if options['tweet']:
+                twitter.postTweet(message)
+            print(message.encode('ascii', 'replace'))
+        
+        if options['backup']:
+            board.write()
 
 def updateJson(twitter):
     boards = {}
@@ -164,7 +170,8 @@ def getRoot(xmlFile):
     return tree.getroot()
 
 
-def nth(i):
+def nth(n):
+    i = n % 10
     if i == 1:
         return 'st'
     elif i == 2:
@@ -181,16 +188,16 @@ def composeMessage(person, board, twitter, nodot=False):
 
 
 
-    score = person['points']
+    #score = person['points']
     rank = int(person['rank'])
 
     if 'histPoints' in person:
         hasHist = True
-        histPoints = person['histPoints']
+        #histPoints = person['histPoints']
         histRank = int(person['histRank'])
     else:
         hasHist = False
-        histPoints = -1
+        #histPoints = -1
         histRank = -1
     
     url = board.getUrl(person)
@@ -209,7 +216,7 @@ def composeMessage(person, board, twitter, nodot=False):
         inter1 = ', '
         inter2 = nth(rank) + ' in '
         inter3 = ', improves'
-        relRank = ''
+        #relRank = ''
         if board.board.pre_unit():
             inter3 += ' ' + board.board.pre_unit()
         inter3 += ' to '
@@ -234,6 +241,7 @@ def composeMessage(person, board, twitter, nodot=False):
         name = person['name']
     else:
         name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
+    print(nsb_steam.steamtime(int(person['steam_id']), options['steam_key']))
     if 'steam_id' in person:
         if nsb_steam.known_cheater(person['steam_id']):
             name = '@heatherary, cheater: ' + name
@@ -284,25 +292,25 @@ def composeDailyMessage(persons, board, twitter):
 
 
 #TODO: broken
-def printBoard():
-    index = nsb_index.index()
-    index.fetch()
-
-    for entry in index.entries():
-        board = nsb_leaderboard.leaderboard(entry, 'xml')
-        if board.include() and board.info.character == 'bard':
-            board.fetch()
-            print(board.topEntries())
-    return
-
-
-    nsb_steam.downloadBoard(lbid, currPath, start, end)
-    root = getRoot(path + lbid + '.xml')
-    index = getEntryIndex(root)
-    for entry in root[index]:
-        steamid, score, rank = extractEntry(entry)
-        name = steamname(steamid)
-        printPlayer(name, rank, score)
+#def printBoard():
+#    index = nsb_index.index()
+#    index.fetch()
+#
+#    for entry in index.entries():
+#        board = nsb_leaderboard.leaderboard(entry, 'xml')
+#        if board.include() and board.info.character == 'bard':
+#            board.fetch()
+#            print(board.topEntries())
+#    return
+#
+#
+#    nsb_steam.downloadBoard(lbid, currPath, start, end)
+#    root = getRoot(path + lbid + '.xml')
+#    index = getEntryIndex(root)
+#    for entry in root[index]:
+#        steamid, score, rank = extractEntry(entry)
+#        name = steamname(steamid)
+#        printPlayer(name, rank, score)
 
 
 #leaderboardurl='http://steamcommunity.com/stats/247080/leaderboards/?xml=1'

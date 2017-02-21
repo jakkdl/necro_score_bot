@@ -1,7 +1,6 @@
 import argparse
 import configparser
 import os
-import sys
 from pprint import pprint
 
 

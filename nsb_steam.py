@@ -46,9 +46,9 @@ def decodeResponse(response, re_codec='utf-8'):
     text = data.decode(re_codec)
     return text
 
-def downloadIndex(path):
-    boardFile = path + 'leaderboards.xml'
-    fetchUrl(leaderboardsurl, boardFile)
+#def downloadIndex(path):
+#    boardFile = path + 'leaderboards.xml'
+#    fetchUrl(leaderboardsurl, boardFile)
 
 def getTwitterHandle(id, twitit):
     url = 'http://steamcommunity.com/profiles/' + str(id)
@@ -77,6 +77,23 @@ def steamname(steam_id, key):
     reader = codecs.getreader('utf-8')
     obj = json.load(reader(response))
     return obj['response']['players'][0]['personaname']
+
+def steamtime(steam_id, key):
+    """
+    Returns number of minutes played necrodancer, or None if profile is set to private.
+    """
+    STEAMKEY = key
+    url = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=%s&steamid=%d&format=json'%(STEAMKEY, steam_id)
+    response = fetchUrl(url)
+    reader = codecs.getreader('utf-8')
+    obj = json.load(reader(response))
+    if 'games' in obj['response']:
+        for game in obj['response']['games']:
+            if game['appid'] == 247080:
+                return game['playtime_forever']
+    else:
+        print(steam_id, 'has private profile')
+    return None
 
 def known_cheater(steam_id):
     file = 'known_cheaters.txt'

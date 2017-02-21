@@ -1,7 +1,5 @@
-#!/usr/bin/python3.4
-import os
-import os.path
-from pprint import pprint
+#!/usr/bin/python3
+import shutil
 
 from nsb_config import options
 from nsb_config import default_global_path
@@ -10,8 +8,8 @@ import cotn_twitter
 
 
 def main():
-    debug = options['debug']
-    dry_run = options['dry-run']
+    #debug = options['debug']
+    #dry_run = options['dry-run']
 
     
     if options['twitter_keys'] != None:
