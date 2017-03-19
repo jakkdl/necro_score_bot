@@ -85,6 +85,10 @@ _parser.add_argument('--tweet', help='enable tweeting',
 
 _parser.add_argument('--backup', help='backup files to history after downloading',
                      metavar='bool', type=_bool)
+
+_parser.add_argument('--churn', help='churn through changes quickly, not composing or posting any messages',
+                     action='store_true', default=False)
+
 ###########################################################################
  
 
