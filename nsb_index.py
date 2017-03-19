@@ -4,10 +4,7 @@ import nsb_database
 
 class index:
     def __init__(self, saveToFile = True):
-        #if saveToFile:
         self.path = options['data'] + 'leaderboards.xml'
-        #else:
-            #self.path = None
         self.data = None
     
     def fetch(self):

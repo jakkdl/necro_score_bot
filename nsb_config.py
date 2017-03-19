@@ -201,8 +201,9 @@ def evaluate_paths(options):
 
 def create_paths(options):
     createDir(options['data'], options)
-    createDir(options['data'] + 'curr/', options)
-    createDir(options['data'] + 'last/', options)
+    createDir(options['data'] + 'curr/', options) #TODO: needed?
+    createDir(options['data'] + 'last/', options) #TODO: needed?
+    createDir(options['data'] + 'boards/', options)
 
 def read_options():
     #Will exit here if --help is supplied

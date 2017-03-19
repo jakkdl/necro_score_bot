@@ -38,7 +38,7 @@ class twitter:
 
 
     def blockCheck(self):
-        if self.tweetCount > 10:
+        if self.tweetCount > 20:
             self.createBlock()
         if self.blockExists():
             raise LookupError('Tweeting is blocked')

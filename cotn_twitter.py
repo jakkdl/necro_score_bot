@@ -29,8 +29,8 @@ def update(twitter):
     debug = options['debug']
 
     index = nsb_index.index()
-    index.read_xml()
-    #index.fetch()
+    #index.read_xml()
+    index.fetch()
 
 
     for entry in index.entries():
@@ -51,11 +51,15 @@ def update(twitter):
 
             if board.hasFile():
                 board.read()
-                deletedEntries = board.checkForDeleted(90)
+                try:
+                    deletedEntries = board.checkForDeleted(90)
+                except:
+                    #we probably have an older leaderboard
+                    continue
                 if deletedEntries > 0:
                     print("Found", deletedEntries, "deleted entries in", str(board))
-                if deletedEntries >= len(board.history):
-                    raise Exception('ERROR:', deletedEntries, 'all entries deleted')
+                if deletedEntries > len(board.history):
+                    raise Exception('ERROR: ' + str( deletedEntries) + ' ' + str(board)+ ' all entries deleted')
                 if deletedEntries > 60:
                     raise Exception('ERROR:', deletedEntries, 'too many deleted entries')
                 entries = board.diffingEntries(twitter=twitter)

@@ -18,8 +18,11 @@ import nsb_steam
 ##coop
 #True, False
 
-#customMusic
+##customMusic
 #True, False
+
+##extras
+extras = ['no return', 'hard mode']
 
 def extractCharacter(name):
     names = ['all char', 'story mode', 'aria', 'bard', 'bolt',
@@ -55,6 +58,12 @@ def checkCoop(name):
 def checkCustomMusic(name):
     return 'custom' in name
 
+def checkExtraModes(name):
+    extraModes = []
+    for mode in extras:
+        if mode in name:
+            extraModes.append(mode)
+    return extraModes
 
 def extractMode(name):
     if '/' in name:
@@ -90,6 +99,7 @@ class steam_board:
         self._coop = checkCoop(name)
         self._customMusic = checkCustomMusic(name)
         self._dlc = checkDLC(name)
+        self._extra = checkExtraModes(name)
 
         self.name = self.nice_name()
         self._name = name
@@ -108,6 +118,9 @@ class steam_board:
         if self._character == None or self._mode == None:
             return 'None'
         result = self._character
+        
+        if self._extra:
+            result += ' ' + ' '.join(self._extra)
         if self._customMusic:
             result += ' custom music'
         if self._coop:
@@ -218,6 +231,8 @@ class steam_board:
             return False
         if self._mode == None:
             return False
+        if self._extra:
+            return False
         return True
 
 
@@ -245,10 +260,12 @@ class steam_board:
 
 
     def entriesToReportOnPointsDiff(self):
-        return 5
+        #return 5
+        return 3 ##lower tweet rate
 
     def entriesToReportOnRankDiff(self):
-        return 10
+        #return 10
+        return 5 ##lower tweet rate
 
     def entriesToPrivateReportOnPointsDiff(self):
         return 100
