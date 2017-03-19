@@ -345,4 +345,6 @@ class steam_board:
     def getUrl(self, person):
         if self._mode == 'daily':
             return self.url
+        if not self.url:
+            return ''
         return self.url + '?id=' + str(person['steam_id'])

@@ -33,8 +33,8 @@ def update(twitter):
     index.fetch()
 
 
-    for entry in index.entries():
-        steam_board = nsb_steam_board.steam_board(entry)
+    for index_entry in index.entries():
+        steam_board = nsb_steam_board.steam_board(index_entry)
         board = nsb_leaderboard.leaderboard(steam_board)
         #print(board)
         if steam_board.include():
@@ -54,6 +54,7 @@ def update(twitter):
                 try:
                     deletedEntries = board.checkForDeleted(90)
                 except:
+                    print('checkForDeleted threw exception, skipping')
                     #we probably have an older leaderboard
                     continue
                 if deletedEntries > 0:
