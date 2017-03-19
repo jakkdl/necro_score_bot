@@ -47,6 +47,9 @@ def update(twitter):
                 continue
 
             board.fetch()
+            if options['churn']:
+                if options['backup']:
+                    board.write()
 
 
             if board.hasFile():
@@ -67,13 +70,12 @@ def update(twitter):
             else:
                 entries = board.topEntries(5)
 
-            if not options['churn']:
-                for entry in entries:
-                    #print(nsb_steam.steamname(int(entry['steam_id']), options['steam_key']))
-                    message = composeMessage(entry, board, twitter)
-                    if options['tweet']:
-                        twitter.postTweet(message)
-                    print(message.encode('ascii', 'replace'))
+            for entry in entries:
+                #print(nsb_steam.steamname(int(entry['steam_id']), options['steam_key']))
+                message = composeMessage(entry, board, twitter)
+                if options['tweet']:
+                    twitter.postTweet(message)
+                print(message.encode('ascii', 'replace'))
 
             if options['backup']:
                 board.write()
