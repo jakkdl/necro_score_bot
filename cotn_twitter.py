@@ -10,6 +10,7 @@ import nsb_steam
 import nsb_index
 import nsb_database
 import nsb_format_points
+import nsb_discord
 
 from nsb_config import options
 
@@ -19,54 +20,69 @@ def update(twitter):
     index = nsb_index.index()
     index.fetch()
 
-
+    messages = []
     for index_entry in index.entries():
-        steam_board = nsb_steam_board.steam_board(index_entry)
-        board = nsb_leaderboard.leaderboard(steam_board)
+        messages += update_board(twitter, index_entry)
+    
+    for message in messages:
+        if options['discord']:
+            with open('test.fifo', 'w') as f:
+                print('writing to fifo')
+                f.write(message)
+        if options['tweet']:
+            twitter.postTweet(message)
+        if options['debug']:
+            print(message.encode('ascii', 'replace'))
 
-        if not steam_board.include():
-            print('skipping: ', index_entry)
-        else:
-            if options['debug']:
-                print("including: ", str(board))
+    print('finished at: ', time.strftime('%c'))
 
-            if not board.hasFile() and not options['handle-new']:
-                print('New leaderboard', str(board), 'use --handle-new to use')
-                continue
+def update_board(twitter, index_entry)
+    steam_board = nsb_steam_board.steam_board(index_entry)
+    board = nsb_leaderboard.leaderboard(steam_board)
 
-            board.fetch()
-            if options['churn']:
-                if options['backup']:
-                    board.write()
+    if not steam_board.include():
+        print('skipping: ', index_entry)
+        return []
+
+    if options['debug']:
+        print("including: ", str(board))
+
+    if not board.hasFile() and not options['handle-new']:
+        print('New leaderboard', str(board), 'use --handle-new to use')
+        continue
+
+    board.fetch()
+    if options['churn']:
+        if options['backup']:
+            board.write()
+            continue
 
 
-            if not board.hasFile():
-                entries = board.topEntries(5)
-            else:
-                board.read()
-                try:
-                    deletedEntries = board.checkForDeleted(90)
-                except:
-                    print('checkForDeleted threw exception, skipping')
-                    #we probably have an older leaderboard
-                    continue
-                if deletedEntries > 0:
-                    print("Found", deletedEntries, "deleted entries in", str(board))
-                if deletedEntries > len(board.history):
-                    raise Exception('ERROR: {} {} all entries deleted'.format(deletedEntries, board))
-                if deletedEntries > 60:
-                    raise Exception('ERROR: {} too many deleted entries'.format(deletedEntries))
-                entries = board.diffingEntries(twitter=twitter)
+    if not board.hasFile():
+        entries = board.topEntries(5)
+    else:
+        board.read()
+        try:
+            deletedEntries = board.checkForDeleted(90)
+        except:
+            print('checkForDeleted threw exception, skipping')
+            #we probably have an older leaderboard
+            continue
+        if deletedEntries > 0:
+            print("Found", deletedEntries, "deleted entries in", str(board))
+        if deletedEntries > len(board.history):
+            raise Exception('ERROR: {} {} all entries deleted'.format(deletedEntries, board))
+        if deletedEntries > 60:
+            raise Exception('ERROR: {} too many deleted entries'.format(deletedEntries))
+        entries = board.diffingEntries(twitter=twitter)
+    messages = []
+    for entry in entries:
+        message = composeMessage(entry, board, twitter)
+        messages.append(message)
 
-            for entry in entries:
-                message = composeMessage(entry, board, twitter)
-                if options['tweet']:
-                    twitter.postTweet(message)
-                if options['debug']:
-                    print(message.encode('ascii', 'replace'))
-
-            if options['backup']:
-                board.write()
+    if options['backup']:
+        board.write()
+    return messages
 
 
 def postYesterday(twitter):
