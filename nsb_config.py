@@ -20,7 +20,6 @@ _expect_common_config = [('dry-run', bool),
                          ('debug', bool),
                          ('steam_key', str),
                          ('twitter_keys', str),
-                         ('json_urls', str)
                          ]
 
 _expect_global_config = _expect_common_config + [('config', str)]
@@ -55,7 +54,7 @@ _parser = argparse.ArgumentParser()
 # commands
 _parser.add_argument('action',
                      help='action to perform',
-                     choices=['init', 'postDaily', 'update', 'printBoard', 'none', 'updateJson'])
+                     choices=['init', 'postDaily', 'update', 'printBoard', 'none'])
  
 # flags
 _parser.add_argument('--config', help='specify config path',
@@ -196,10 +195,6 @@ def evaluate_paths(options):
     options['config'] = evaluate_path(options['config'], False)
 
     options['steam_key'] = readFile(evaluate_path(options['steam_key'], False))
-
-    options['json_urls'] = options['json_urls'].split('\n')
-
-    options['json_urls'].remove('')
 
     return options
 

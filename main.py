@@ -36,9 +36,6 @@ def main():
     elif options['action'] == 'printBoard':
         cotn_twitter.printBoard()
 
-    elif options['action'] == 'updateJson':
-        cotn_twitter.updateJson(twitter)
-    
     elif options['action'] == 'none':
         print("exiting")
 

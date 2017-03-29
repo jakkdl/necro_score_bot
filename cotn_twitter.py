@@ -5,7 +5,6 @@ import time
 import datetime
 
 import nsb_leaderboard
-import nsb_necrolab_board
 import nsb_steam_board
 import nsb_steam
 import nsb_index
@@ -78,35 +77,6 @@ def update(twitter):
 
             if options['backup']:
                 board.write()
-
-def updateJson(twitter):
-    boards = {}
-    for name in options['json_urls']:
-        if options['debug']:
-            print(name)
-
-        necrolab_board = nsb_necrolab_board.leaderboard(name, boards)
-        board = nsb_leaderboard.leaderboard(necrolab_board)
-        board.fetch()
-        boards[name] = board
-
-        if board.hasFile():
-            board.read()
-            entries = board.diffingEntries(twitter=twitter, num=500)
-        else:
-            entries = board.topEntries(5)
-
-
-        for entry in entries:
-            message = composeMessage(entry, board, twitter)
-            if options['tweet']:
-                twitter.postTweet(message)
-            print(message.encode('ascii', 'replace'))
-            #message = composeMessage(entry, board, twitter)
-            #print(message)
-    if options['backup']:
-        for board in boards:
-            board.write()
 
 
 def postYesterday(twitter):
