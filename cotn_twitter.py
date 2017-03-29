@@ -3,6 +3,7 @@ import os
 import os.path
 import time
 import datetime
+import concurrent.futures
 
 import nsb_leaderboard
 import nsb_steam_board
@@ -19,54 +20,95 @@ def update(twitter):
     index = nsb_index.index()
     index.fetch()
 
-
-    for index_entry in index.entries():
-        steam_board = nsb_steam_board.steam_board(index_entry)
-        board = nsb_leaderboard.leaderboard(steam_board)
-
-        if not steam_board.include():
-            print('skipping: ', index_entry)
-        else:
-            if options['debug']:
-                print("including: ", str(board))
-
-            if not board.hasFile() and not options['handle-new']:
-                print('New leaderboard', str(board), 'use --handle-new to use')
-                continue
-
-            board.fetch()
-            if options['churn']:
-                if options['backup']:
-                    board.write()
-
-
-            if not board.hasFile():
-                entries = board.topEntries(5)
+    entries = []
+   #for index_entry in index.entries():
+   #    res = update_board(index_entry)
+   #    if res:
+   #        entries.append(res)
+    with concurrent.futures.ThreadPoolExecutor(
+            max_workers=50) as executor:
+        # Start the load operations and mark each future
+        # with its index_entry
+        future_to_entry = {executor.submit(update_board,
+            index_entry): index_entry for index_entry in
+            index.entries()}
+        for future in concurrent.futures.as_completed(
+                future_to_entry):
+            entry = future_to_entry[future]
+            try:
+                data = future.result()
+            except Exception as exc:
+                print('{} generated an exception: {}'.format(
+                    url, exc))
             else:
-                board.read()
-                try:
-                    deletedEntries = board.checkForDeleted(90)
-                except:
-                    print('checkForDeleted threw exception, skipping')
-                    #we probably have an older leaderboard
-                    continue
-                if deletedEntries > 0:
-                    print("Found", deletedEntries, "deleted entries in", str(board))
-                if deletedEntries > len(board.history):
-                    raise Exception('ERROR: {} {} all entries deleted'.format(deletedEntries, board))
-                if deletedEntries > 60:
-                    raise Exception('ERROR: {} too many deleted entries'.format(deletedEntries))
-                entries = board.diffingEntries(twitter=twitter)
+                if data[1]:
+                    print(data)
 
-            for entry in entries:
-                message = composeMessage(entry, board, twitter)
-                if options['tweet']:
-                    twitter.postTweet(message)
-                if options['debug']:
-                    print(message.encode('ascii', 'replace'))
 
-            if options['backup']:
-                board.write()
+ #  if options['debug']:
+ #      print('finished fetch at: ', time.strftime('%c'))
+
+ #  for board, stuff in entries:
+ #      for entry in stuff:
+ #          message = composeMessage(entry, board, twitter)
+ #          if options['debug']:
+ #              print(message.encode('ascii', 'replace'))
+
+ #          if options['tweet']:
+ #              twitter.postTweet(message)
+
+    print('finished at: ', time.strftime('%c'))
+
+def update_board(index_entry):
+    steam_board = nsb_steam_board.steam_board(index_entry)
+    board = nsb_leaderboard.leaderboard(steam_board)
+
+    #if options['debug']:
+        #print(str(board))
+
+    if not board.hasFile() and not options['handle-new']:
+        print('New leaderboard {}, use --handle-new to use'.format(str(board)))
+        return
+
+    board.fetch()
+    if options['churn']:
+        if options['backup']:
+            board.write()
+
+
+    if not board.hasFile():
+        entries = board.topEntries(5) #TODO: 5?
+        if options['backup']:
+            board.write()
+        return (board, entries)
+
+    board.read()
+    try:
+        deletedEntries = board.checkForDeleted(90)
+    except:
+        print('checkForDeleted threw exception, skipping')
+        #we probably have an older leaderboard
+        return []
+
+    if deletedEntries > 0:
+        print("Found {} deleted entries in {}".format(
+            deletedEntries, str(board)))
+
+    if deletedEntries > len(board.history): #TODO: >=?
+        print('ERROR: {} {} all entries deleted'.format(deletedEntries, board))
+        return
+
+    if deletedEntries > 60:
+        print('ERROR: {} too many deleted entries'.format(deletedEntries))
+        return
+
+    entries = board.diffingEntries()
+    if options['backup']:
+        board.write()
+    return (board, entries)
+
+
+
 
 
 def postYesterday(twitter):

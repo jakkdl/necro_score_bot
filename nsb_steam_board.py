@@ -165,58 +165,6 @@ class steam_board:
         return datetime.date(int(sp[2]), int(sp[1]), int(sp[0]))
 
 
-    def maxLeaderboardEntries(self):
-        #if self._customMusic:
-            #return 1
-        if self._coop:
-            return 3
-        if self._seeded:
-            return 5
-        if self._mode == 'deathless':
-            return 5
-        if self._mode == 'score':
-            return 5
-        if self._mode == 'speed':
-            return 5
-        if self._mode == 'daily':
-            return 3
-        return None
-
-    def maxCompareEntries(self):
-        return 100
-
-    def include(self):
-
-        if self._availability != 'prod':
-            return False
-
-
-        if self._customMusic:
-            return False
-        if self._coop and self._seeded:
-            return False
-        if self._seeded and self._mode == 'deathless':
-            return False
-        if self._mode == 'daily':
-            return False
-        if self._character == None:
-            return False
-        if self._coop:
-            return False
-
-
-        if self._mode == 'deathless':
-            if self._character == 'all char' or self._character == 'story mode':
-                return False
-
-        if self._seeded:
-            if self._character == 'all char' or self._character == 'story mode':
-                return False
-            return True # <3 Grimy
-        if self._mode != None:
-            return True
-        return False
-
 
     def toofzChar(self, char):
         if char == 'all char':
@@ -246,7 +194,6 @@ class steam_board:
 
         if self.daily():
             return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
-        #http://crypt.toofz.com/Leaderboards/Daily/2015/05/27
 
         char = self.toofzChar(self._character)
         mode = self._mode

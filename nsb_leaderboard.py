@@ -68,48 +68,47 @@ class leaderboard:
                 deleted += 1
         return deleted
 
-    def diffingEntries(self, num=None, twitter=None):
+    def diffingEntries(self, num=None):
         if self.data == None:
             raise Exception('No data')
         if self.history == None:
             raise Exception('No history')
 
+        if not self.data:
+          return []
+
         result = []
 
 
-        rankMax = max(self.board.entriesToReportOnRankDiff(),
-                self.board.entriesToPrivateReportOnRankDiff())
 
         if num == None:
-            num = rankMax
-
-        num = min(num, len(self.data))
-        if num == 0:
-          return []
+            num = max(
+                    self.board.entriesToReportOnRankDiff(),
+                    self.board.entriesToPrivateReportOnRankDiff())
 
         if 'steam_id' in self.data[0]:
             key = 'steam_id'
         else:
             key = 'name'
 
-        for i in range(num):
+        for person in self.data[:num]:
             found = False
-            person = self.data[i]
 
 
-            for hist in self.history:
+            for hist in self.history[:num+10]: #TODO: 10?
                 if person[key] == hist[key]:
                     found = True
-                    save = False
-                    if self.board.report(person, hist, twitter=twitter):
+#if self.board.report(person, hist, twitter=twitter):
+
+                    if person['points'] > hist['points']:
                         person['histRank'] = hist['rank']
                         person['histPoints'] = hist['points']
                         result.append(person)
                     break
 
             if not found:
-                if self.board.report(person, twitter=twitter, hist=None):
-                    result.append(person)
+#if self.board.report(person, twitter=twitter, hist=None):
+                result.append(person)
 
         return result
 
@@ -127,9 +126,13 @@ class leaderboard:
     def __str__(self):
         return str(self.board)
 
+    def __info__(self):
+        return str(self.board)
+
     def __repr__(self):
         #print(self.orig_name)
-        return repr(self.info)
+        #return repr(self.info())
+        return str(self.board)
 
     def formatPoints(self, person):
         strPoints = self.board.formatPoints(person['points'])
