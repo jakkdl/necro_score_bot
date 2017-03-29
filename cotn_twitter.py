@@ -13,37 +13,23 @@ import nsb_format_points
 
 from nsb_config import options
 
-
-baseUrl = 'http://steamcommunity.com/stats/247080/leaderboards/'
-leaderboardsurl = baseUrl + '?xml=1'
-
-
-
-
-
 def update(twitter):
     print('start at: ', time.strftime('%c'))
 
-    debug = options['debug']
-
     index = nsb_index.index()
-    #index.read_xml()
     index.fetch()
 
 
     for index_entry in index.entries():
         steam_board = nsb_steam_board.steam_board(index_entry)
         board = nsb_leaderboard.leaderboard(steam_board)
-        #print(board)
+
         if not steam_board.include():
-            print('skipping (str): ', str(board))
-            #print('skipping (repr): ', repr(board))
-            print('skipping (entry): ', index_entry)
+            print('skipping: ', index_entry)
         else:
-            #print("hi")
-            if debug:
-                #print(repr(board))
+            if options['debug']:
                 print("including: ", str(board))
+
             if not board.hasFile() and not options['handle-new']:
                 print('New leaderboard', str(board), 'use --handle-new to use')
                 continue
@@ -54,7 +40,9 @@ def update(twitter):
                     board.write()
 
 
-            if board.hasFile():
+            if not board.hasFile():
+                entries = board.topEntries(5)
+            else:
                 board.read()
                 try:
                     deletedEntries = board.checkForDeleted(90)
@@ -65,19 +53,17 @@ def update(twitter):
                 if deletedEntries > 0:
                     print("Found", deletedEntries, "deleted entries in", str(board))
                 if deletedEntries > len(board.history):
-                    raise Exception('ERROR: ' + str( deletedEntries) + ' ' + str(board)+ ' all entries deleted')
+                    raise Exception('ERROR: {} {} all entries deleted'.format(deletedEntries, board))
                 if deletedEntries > 60:
-                    raise Exception('ERROR:', deletedEntries, 'too many deleted entries')
+                    raise Exception('ERROR: {} too many deleted entries'.format(deletedEntries))
                 entries = board.diffingEntries(twitter=twitter)
-            else:
-                entries = board.topEntries(5)
 
             for entry in entries:
-                #print(nsb_steam.steamname(int(entry['steam_id']), options['steam_key']))
                 message = composeMessage(entry, board, twitter)
                 if options['tweet']:
                     twitter.postTweet(message)
-                print(message.encode('ascii', 'replace'))
+                if options['debug']:
+                    print(message.encode('ascii', 'replace'))
 
             if options['backup']:
                 board.write()
@@ -108,35 +94,10 @@ def postDaily(date, twitter):
         message = composeDailyMessage(board.topEntries(3), board, twitter)
         if options['tweet']:
             twitter.postTweet(message)
-        if True:
-            #print(repr(board))
+        if options['debug']:
             print(message)
-        #break
 
-def createDir(path):
-    if not os.path.isdir(path):
-        print(path, "doesn't exist, creating")
-        if not options['dry-run']:
-            os.mkdir(path)
-
-
-def nth(i):
-    if i % 10 == 1 and i % 100 != 11:
-        return 'st'
-    elif i % 10 == 2 and i % 100 != 12:
-        return 'nd'
-    elif i % 10 == 3 and i % 100 != 13:
-        return 'rd'
-    else:
-        return 'th'
-
-def composeMessage(person, board, twitter, nodot=False):
-    #if 'steam_id' in person:
-        #person['steamid'] = person['steam_id']
-        #person['score'] = float(person['points'])
-
-
-
+def composeMessage(person, board, twitter):
     score = person['points']
     rank = int(person['rank'])
 
@@ -190,12 +151,14 @@ def composeMessage(person, board, twitter, nodot=False):
         name = person['name']
     else:
         name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
+
     if 'steam_id' in person:
+        community_manager = '@Arachness_'
         if nsb_steam.known_cheater(person['steam_id']):
-            name = '@Arachness_, cheater: ' + name
+            name = '{}, cheater: {}'.format(community_manager, name)
             tag = ''
         elif board.impossiblePoints(person):
-            name = '@Arachness_, bugged: ' + name
+            name = '{}, bugged: {}'.format(community_manager, name)
             tag = ''
 
     full = name + inter1 + str(board.realRank(rank)) + inter2 + str(board) + inter3 + strPoints
