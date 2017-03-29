@@ -116,8 +116,6 @@ class leaderboard:
 
     def realRank(self, rank):
         subtract = 0
-        if 'SRL' in str(self.board):
-            return rank
         for i in self.data[:rank-1]:
             if self.impossiblePoints(i) or nsb_steam.known_cheater(i['steam_id']):
                 #print(i)

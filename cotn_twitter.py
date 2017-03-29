@@ -7,7 +7,6 @@ import datetime
 import nsb_leaderboard
 import nsb_necrolab_board
 import nsb_steam_board
-import nsb_srl_board
 import nsb_steam
 import nsb_index
 import nsb_database
@@ -109,27 +108,6 @@ def updateJson(twitter):
         for board in boards:
             board.write()
 
-def updateSRL(twitter):
-    srl_board = nsb_srl_board.leaderboard()
-    board = nsb_leaderboard.leaderboard(srl_board)
-    board.fetch()
-
-    if board.hasFile():
-        board.read()
-        entries = board.diffingEntries()
-    else:
-        entries = board.topEntries(board.board.entriesToReportOnRankDiff())
-
-
-    for entry in entries:
-        message = composeMessage(entry, board, twitter)
-        if options['tweet']:
-            twitter.postTweet(message)
-        print(message.encode('ascii', 'replace'))
-        #message = composeMessage(entry, board, twitter)
-        #print(message)
-    if options['backup']:
-        board.write()
 
 def postYesterday(twitter):
     postDaily(datetime.date.today() - datetime.timedelta(days=1), twitter)
