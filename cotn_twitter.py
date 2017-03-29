@@ -246,38 +246,6 @@ def composeDailyMessage(persons, board, twitter):
 
 
 
-
-
-
-
-
-
-
-
-
-
-#TODO: broken
-def printBoard():
-    index = nsb_index.index()
-    index.fetch()
-
-    for entry in index.entries():
-        board = nsb_leaderboard.leaderboard(entry, 'xml')
-        if board.include() and board.info.character == 'bard':
-            board.fetch()
-            print(board.topEntries())
-    return
-
-
-    nsb_steam.downloadBoard(lbid, currPath, start, end)
-    root = getRoot(path + lbid + '.xml')
-    index = getEntryIndex(root)
-    for entry in root[index]:
-        steamid, score, rank = extractEntry(entry)
-        name = steamname(steamid)
-        printPlayer(name, rank, score)
-
-
 #leaderboardurl='http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
 
 
