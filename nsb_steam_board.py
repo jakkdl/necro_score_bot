@@ -219,11 +219,8 @@ class steam_board:
         if char == 'story mode':
             return 'story'
         return char
+    
 
-
-    def toofzMode(self, mode):
-        #mode = mode.replace('score', 'hardcore')
-        return mode
 
 
     def toofzSupport(self):
@@ -231,23 +228,27 @@ class steam_board:
             return False
         if self._mode == None:
             return False
-        if self._extra:
+        if len(self._extra) > 1:
+            print('toofz doesnt support >1 extra modes')
             return False
         return True
 
 
     def toofzUrl(self):
+        base = 'http://crypt.toofz.com/leaderboards/'
         if self._dlc:
-            base = 'http://crypt.toofz.com/leaderboards/amplified/'
-        else:
-            base = 'http://crypt.toofz.com/leaderboards/'
+            base += 'amplified/'
+
         if self.daily():
             return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
         #http://crypt.toofz.com/Leaderboards/Daily/2015/05/27
+
         char = self.toofzChar(self._character)
-        mode = self.toofzMode(self._mode)
+        mode = self._mode
         if self._seeded:
-            return base + '%s/seeded%s'%(char, mode)
+            mode = 'seeded-' + mode
+        if self._extra:
+            mode += '/' + self._extra[0].replace(' ', '-')
         return base + '%s/%s'%(char, mode)
 
     def parseResponse(self, response):

@@ -35,7 +35,11 @@ def update(twitter):
         steam_board = nsb_steam_board.steam_board(index_entry)
         board = nsb_leaderboard.leaderboard(steam_board)
         #print(board)
-        if steam_board.include():
+        if not steam_board.include():
+            print('skipping (str): ', str(board))
+            #print('skipping (repr): ', repr(board))
+            print('skipping (entry): ', index_entry)
+        else:
             #print("hi")
             if debug:
                 #print(repr(board))
