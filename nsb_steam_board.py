@@ -26,12 +26,14 @@ extras = ['no return', 'hard mode']
 
 def extractCharacter(name):
     names = ['all char', 'story mode', 'aria', 'bard', 'bolt',
-            'coda', 'dorian', 'dove', 'eli', 'melody', 'monk']
+            'coda', 'dorian', 'dove', 'eli', 'melody', 'monk',
+            'diamond']
     for i in names:
         if i in name:
             return i
     if checkCadence(name):
         return 'cadence'
+    print('unknown character in board {}'.format(name))
     return None
 
 
@@ -76,6 +78,7 @@ def extractMode(name):
         return 'speed'
     if 'hardcore' in name:
         return 'score'
+    print('unknown mode in board {}'.format(name))
     return None
 
 
