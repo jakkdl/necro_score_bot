@@ -120,11 +120,6 @@ def createDir(path):
             os.mkdir(path)
 
 
-def getRoot(xmlFile):
-    tree = ET.parse(xmlFile)
-    return tree.getroot()
-
-
 def nth(i):
     if i % 10 == 1 and i % 100 != 11:
         return 'st'
@@ -168,7 +163,7 @@ def composeMessage(person, board, twitter, nodot=False):
         inter3 = ' with '
     else:
         inter1 = ', '
-        inter2 = nth(rank) + ' in '
+        inter2 = nsb_format_points.nth(rank) + ' in '
         inter3 = ', improves'
         relRank = ''
         if board.board.pre_unit():
@@ -243,21 +238,3 @@ def composeDailyMessage(persons, board, twitter):
 
     return ' '.join(map(str, ["Top scores for", date_string, "Daily:",
             namescores_string, url, tag]))
-
-
-
-#leaderboardurl='http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
-
-
-#printTop10('695404')
-
-if __name__=="__main__":
-    update()
-#print(getTwitterHandle('76561198074553183'))
-#print(getTwitterHandle('76561197975956199'))
-#rat
-#print(getTwitterHandle(76561198089674311))
-#print(getTwitterHandle(76561197998362244))
-#printBoard('470749', currPath)
-#printBoard('386753', currPath)
-#prit(diff('695473'))

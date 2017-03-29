@@ -1,3 +1,13 @@
+def nth(i):
+    if i % 10 == 1 and i % 100 != 11:
+        return 'st'
+    elif i % 10 == 2 and i % 100 != 12:
+        return 'nd'
+    elif i % 10 == 3 and i % 100 != 13:
+        return 'rd'
+    else:
+        return 'th'
+
 def scoreToProgress(score):
     wins = score // 100
     zone = ( score // 10 ) % 10 + 1

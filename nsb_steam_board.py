@@ -27,7 +27,7 @@ extras = ['no return', 'hard mode']
 def extractCharacter(name):
     names = ['all char', 'story mode', 'aria', 'bard', 'bolt',
             'coda', 'dorian', 'dove', 'eli', 'melody', 'monk',
-            'diamond']
+            'nocturna', 'diamond']
     for i in names:
         if i in name:
             return i
@@ -39,9 +39,11 @@ def extractCharacter(name):
 
 def checkCadence(name):
     delete = ['hardcore', 'seeded', 'deathless',
-            'speedrun', 'co-op', 'custom', ' ', '_prod', '_dev', 'dlc']
+            'speedrun', 'co-op', 'custom', '_prod', '_dev', 'dlc']
+    delete += extras
     for i in delete:
         name = name.replace(i, '')
+    name = name.replace(' ', '')
     return name == ''
 
 
