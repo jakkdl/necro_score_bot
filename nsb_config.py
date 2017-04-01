@@ -19,6 +19,7 @@ _expect_common_config = [('dry-run', bool),
                          ('data', str),
                          ('debug', bool),
                          ('steam_key', str),
+                         ('discord_token', str),
                          ('twitter_keys', str),
                          ]
 
@@ -54,7 +55,12 @@ _parser = argparse.ArgumentParser()
 # commands
 _parser.add_argument('action',
                      help='action to perform',
-                     choices=['init', 'postDaily', 'update', 'printBoard', 'none'])
+                     choices=['init',
+                         'postDaily',
+                         'update',
+                         'printBoard',
+                         'discord',
+                         'none'])
  
 # flags
 _parser.add_argument('--config', help='specify config path',
@@ -64,6 +70,10 @@ _parser.add_argument('--data', help='specify data path',
                      metavar='DIRECTORY', type=_dir)
 
 _parser.add_argument('--steam-key', help='specify file with steam keys',
+                     metavar='FILE')
+
+_parser.add_argument('--discord_token',
+        help='specify file with discord token',
                      metavar='FILE')
 
 _parser.add_argument('--twitter-keys', help='Specify directory with twitter keys. Set to None to disable twitter.',
@@ -194,7 +204,11 @@ def evaluate_paths(options):
 
     options['config'] = evaluate_path(options['config'], False)
 
-    options['steam_key'] = readFile(evaluate_path(options['steam_key'], False))
+    options['steam_key'] = readFile(
+            evaluate_path(options['steam_key'], False))
+
+    options['discord_token'] = readFile(
+            evaluate_path(options['discord_token'], False))
 
     return options
 

@@ -7,8 +7,6 @@ import re
 import time
 import sys
 
-#from nsb_config import options
-
 
 def fetchUrl(url, path=None):
     tries = 10
@@ -69,14 +67,29 @@ def getTwitterHandle(id, twitit):
         print(handle, 'in steam profile but not valid')
         return None
 
+def fetchJson(url):
+    response = fetchUrl(url)
+    reader = codecs.getreader('utf-8')
+    return json.load(reader(response))
+
 def steamname(steam_id, key):
     #STEAMKEY = options['steam_key']
     STEAMKEY = key
     url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%d'%(STEAMKEY, steam_id)
-    response = fetchUrl(url)
-    reader = codecs.getreader('utf-8')
-    obj = json.load(reader(response))
+    #response = fetchUrl(url)
+    #reader = codecs.getreader('utf-8')
+    #obj = json.load(reader(response))
+    obj = fetchJson(url)
     return obj['response']['players'][0]['personaname']
+
+def get_linked_handles(steam_id):
+    if not isinstance(steam_id, str):
+        steam_id = str(steam_id)
+    base = 'https://api.necrolab.com/players/player?'
+    url = base + 'steamid={}'.format(steam_id)
+    obj = fetchJson(url)
+    return obj['data']['linked']
+
 
 def known_cheater(steam_id):
     file = 'known_cheaters.txt'

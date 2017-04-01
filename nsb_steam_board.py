@@ -212,50 +212,6 @@ class steam_board:
 
 
 
-    def entriesToReportOnPointsDiff(self):
-        #return 5
-        return 3 ##lower tweet rate
-
-    def entriesToReportOnRankDiff(self):
-        #return 10
-        return 5 ##lower tweet rate
-
-    def entriesToPrivateReportOnPointsDiff(self):
-        return 100
-
-    def entriesToPrivateReportOnRankDiff(self):
-        return 100
-
-    def report(self, person, hist, twitter):
-
-        if hist is None:
-            if person['rank'] <= self.entriesToReportOnRankDiff():
-                return True
-            #Check for private tweet
-            if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
-                twitter_handle = self.getTwitterHandle(person, twitter)
-                if twitter_handle:
-                    return True
-            return False
-
-        #If the person haven't improved points, return false
-        if float(hist['points']) >= person['points']:
-            return False
-
-        #Check for public tweet
-        if person['rank'] <= self.entriesToReportOnRankDiff():
-            return True
-
-        #Check for private tweet
-        if person['rank'] <= self.entriesToPrivateReportOnRankDiff():
-            twitter_handle = self.getTwitterHandle(person, twitter)
-            if twitter_handle:
-                person['twitter_username'] = twitter_handle
-                return True
-
-
-        return False
-
     def formatPoints(self, points):
         points = int(points)
         if self._mode == 'speed':

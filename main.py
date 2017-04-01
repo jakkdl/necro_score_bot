@@ -8,6 +8,7 @@ from nsb_config import options
 from nsb_config import default_global_path
 import nsb_twitter
 import cotn_twitter
+import nsb_discord
 
 
 def main():
@@ -35,6 +36,9 @@ def main():
 
     elif options['action'] == 'printBoard':
         cotn_twitter.printBoard()
+
+    elif options['action'] == 'discord':
+        nsb_discord.run(options['discord_token'], twitter)
 
     elif options['action'] == 'none':
         print("exiting")

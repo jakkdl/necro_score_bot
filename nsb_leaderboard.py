@@ -39,11 +39,19 @@ class leaderboard:
         self.data = self.board.parseResponse(response)
 
 
-    def topEntries(self, num=None):
+    def topEntries(self, num=None,
+            includeBoard = False,
+            necrolab_lookup = False):
         if num == None:
             num = self.board.entriesToPrivateReportOnRankDiff()
         num = min(num, len(self.data))
-        return self.data[:num]
+        res = []
+        for i in range(num):
+            if necrolab_lookup:
+                pass
+            res.append((self, self.data[i]))
+        return res
+
 
     def checkForDeleted(self, num):
         deleted = 0
@@ -57,10 +65,10 @@ class leaderboard:
             for person in self.data[:num+20]:
                 if person['steam_id'] == int(hist['steam_id']):
                     if int(person['points']) >= int(hist['points']):
-                    #print(self.history.index(hist), self.data.index(person))
                         found = True
                     else:
-                        print('Found deleted entry due to less points', person)
+                        print('Found deleted entry due to less points\n'
+                                'new: {}\nold: {}'.format(person, hist))
                         raise Exception('ERROR: Found deleted entry due to less points', person)
                     break
             if found == False:
@@ -68,7 +76,9 @@ class leaderboard:
                 deleted += 1
         return deleted
 
-    def diffingEntries(self, num=None):
+    def diffingEntries(self, num=1,
+            includeBoard = False,
+            necrolab_lookup = False):
         if self.data == None:
             raise Exception('No data')
         if self.history == None:
@@ -80,12 +90,6 @@ class leaderboard:
         result = []
 
 
-
-        if num == None:
-            num = max(
-                    self.board.entriesToReportOnRankDiff(),
-                    self.board.entriesToPrivateReportOnRankDiff())
-
         if 'steam_id' in self.data[0]:
             key = 'steam_id'
         else:
@@ -93,22 +97,24 @@ class leaderboard:
 
         for person in self.data[:num]:
             found = False
+            include = False
 
 
             for hist in self.history[:num+10]: #TODO: 10?
                 if person[key] == hist[key]:
                     found = True
-#if self.board.report(person, hist, twitter=twitter):
 
                     if person['points'] > hist['points']:
                         person['histRank'] = hist['rank']
                         person['histPoints'] = hist['points']
-                        result.append(person)
+                        include = True
                     break
 
-            if not found:
-#if self.board.report(person, twitter=twitter, hist=None):
-                result.append(person)
+            if not found or include:
+                if includeBoard:
+                    result.append((self, person))
+                else:
+                    result.append(person)
 
         return result
 
@@ -141,28 +147,6 @@ class leaderboard:
         if self.board.unit() != None:
             strPoints += ' ' + self.board.unit()
         return strPoints
-
-    def includePublic(self, entry):
-        rank = int(entry['rank'])
-        if rank <= self.board.entriesToReportOnRankDiff():
-            #print('rankdiff')
-            return True
-        if rank <= self.board.entriesToReportOnPointsDiff():
-            #print('pointsdiff')
-            return True
-
-    def includePrivate(self, entry, twitter):
-        rank = int(entry['rank'])
-        if ( rank < self.board.entriesToPrivateReportOnRankDiff()
-        or rank < self.board.entriesToPrivateReportOnPointsDiff() ):
-            if 'twitter_username' in entry and entry['twitter_username'] != None and entry['twitter_username'] != '':
-                return True
-            twitterHandle = nsb_steam.getTwitterHandle(entry['steam_id'], twitter)
-            if twitterHandle != None:
-                #print('handle:', twitterHandle)
-                entry['twitter_username'] = twitterHandle
-                return True
-        return False
 
     def getTwitterHandle(self, person, twitter):
         return self.board.getTwitterHandle(person, twitter)
