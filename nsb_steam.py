@@ -48,39 +48,10 @@ def downloadIndex(path):
     boardFile = path + 'leaderboards.xml'
     fetchUrl(leaderboardsurl, boardFile)
 
-def getTwitterHandle(id, twitit):
-    url = 'http://steamcommunity.com/profiles/' + str(id)
-    text = decodeResponse(fetchUrl(url), 'latin-1')
-
-    match = re.search(r"twitter\.com\\/(?P<handle>\w+)\\\"", text)
-    if match is None:
-        return match
-    else:
-        handle = match.group('handle')
-    
-    if not twitit:
-        print('Warning: unverified handle')
-        return handle
-    if twitit.checkTwitterHandle(handle):
-        return handle
-    else:
-        print(handle, 'in steam profile but not valid')
-        return None
-
 def fetchJson(url):
     response = fetchUrl(url)
     reader = codecs.getreader('utf-8')
     return json.load(reader(response))
-
-def steamname(steam_id, key):
-    #STEAMKEY = options['steam_key']
-    STEAMKEY = key
-    url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%d'%(STEAMKEY, steam_id)
-    #response = fetchUrl(url)
-    #reader = codecs.getreader('utf-8')
-    #obj = json.load(reader(response))
-    obj = fetchJson(url)
-    return obj['response']['players'][0]['personaname']
 
 def get_linked_handles(steam_id):
     if not isinstance(steam_id, str):

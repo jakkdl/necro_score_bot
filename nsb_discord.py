@@ -1,73 +1,74 @@
-import discord as discord_api
+"""Module responsible for the necro_score_bot discord bot. Calls back to
+cotn_twitter.update()"""
+
 import asyncio
-import os
-import threading
-import cotn_twitter
 import imp
 
+import cotn_twitter
+
+import discord as discord_api
+
 PYTHONASYNCIODEBUG = 1
-client = discord_api.Client()
-global_twitter = None
+__client__ = discord_api.Client()
 
-async def update_boards(twitter):
-    for msg, linked_data in cotn_twitter.update(twitter):
-        disc_id = linked_data['discord']['id']
+class DiscordBot:
+    """Discord necro_score_bot."""
 
-        if disc_id:
-            await post('<@{}>{}'.format(disc_id, msg))
-        else:
-            await post('{}{}'.format(linked_data['steam']['personaname'],
-                msg))
+    def __init__(self, token, twitter):
+        self.token = token
+        self.twitter = twitter
 
-async def background_task(twitter):
-    await client.wait_until_ready()
-    await asyncio.sleep(20)
-    print('starting background task')
-    while True:
-        await update_boards(twitter)
-        await asyncio.sleep(300)
+    async def update_boards(self):
+        """Fetch all boards and post to twitter (if twitter != None)
+        and post to discord"""
+        for msg, linked_data in cotn_twitter.update(self.twitter):
+            disc_id = linked_data['discord']['id']
 
-@client.event
-async def on_ready():
-    print('logged in as {}'.format(client.user.name))
-    #print('starting thread')
-    #ch = client.get_channel('296608387808886784')
-    #await client.send_message(ch, 'hello')
+            if disc_id:
+                await self.post('<@{}>{}'.format(disc_id, msg))
+            else:
+                await self.post('{}{}'.format(linked_data['steam']['personaname'],
+                                              msg))
 
-    #asyncio.ensure_future(task())
-    #print('thread started')
+    async def background_task(self):
+        """Runs in the background and calls update_boards every 5 minutes."""
 
+        await __client__.wait_until_ready()
+        await asyncio.sleep(20)
+        print('starting background task')
+        while True:
+            await self.update_boards()
+            await asyncio.sleep(300)
 
-@client.event
-async def on_message(message):
-    #print(message.content)
-    if message.content.startswith('!scorebot'):
-        if message.author.id != '84627464709472256':
-            await post('beep boop, not authorized, exterminate')
-        else:
-            if 'update' in message.content:
-                await update_boards(global_twitter)
-            if 'reload' in message.content:
-                imp.reload(cotn_twitter)
+    @__client__.event
+    async def on_ready(self):
+        """Print login info when logged in."""
+        print('logged in as {}'.format(__client__.user.name))
 
 
-        #await client.send_message(message.channel, 'hello? :3')
+    @__client__.event
+    async def on_message(self, message):
+        """Handle incoming messages,
+        supports !scorebot update and !scorebot reload."""
 
-async def post(text):
-    #botspam
-    ch = client.get_channel('296636142210646016') #botspam
-    #ch = client.get_channel('296608387808886784') #tnsb
+        if message.content.startswith('!scorebot'):
+            if message.author.id != '84627464709472256':
+                await self.post('beep boop, not authorized, exterminate')
 
-    await client.send_message(ch, text)
+            else:
+                if 'update' in message.content:
+                    await self.update_boards()
+                if 'reload' in message.content:
+                    imp.reload(cotn_twitter)
+                if 'logout' in message.content:
+                    __client__.logout()
 
-def run(token, twitter):
-    global global_twitter
-    global_twitter = twitter
-    client.loop.create_task(background_task(twitter))
-    try:
-        client.run(token)
-    except:
-        e = sys.exc_info()[0]
-        print('caught exception {}\nlogging out'.format(e))
-        client.logout()
+    async def post(self, text, channel_id='296636142210646016'):
+        """Posts text to channel channel_id."""
+        channel = __client__.get_channel(channel_id)
+        await __client__.send_message(channel, text)
 
+    def run(self,):
+        """Runs the discord bot."""
+        __client__.loop.create_task(self.background_task())
+        __client__.run(self.token)

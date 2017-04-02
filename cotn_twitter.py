@@ -86,7 +86,7 @@ def update(twitter=None, numDiscord=50, numTwitter=5):
 
 
         if (linked_data['discord']['username'] or
-                data[1]['rank'] <= math.ceil(0.10*len(board.data))):
+                discord_include(person, board)):
             discord_messages.append((composeMessage(data[1], data[0]),
                 linked_data))
             #TODO: yield
@@ -98,6 +98,26 @@ def update(twitter=None, numDiscord=50, numTwitter=5):
     return discord_messages
     
 
+
+def discord_include(person, board):
+    entries = len(board.data)
+    rank = person['rank']
+    if rank <= 3:
+        return True
+    if board.board._mode == 'score':
+        if rank <= math.ceil(entries*0.05):
+            return True
+        else:
+            print('score not within 5%')
+            return False
+    else:
+        if rank <= math.ceil(entries*0.10):
+            return True
+        else:
+            print('entry not within 10%')
+            return False
+    
+    return False
 
 
 
