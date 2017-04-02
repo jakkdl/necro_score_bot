@@ -38,7 +38,7 @@ def main():
         cotn_twitter.printBoard()
 
     elif options['action'] == 'discord':
-        d = nsb_discord.discord_bot(options['discord_token'], twitter)
+        d = nsb_discord.DiscordBot(options['discord_token'], twitter)
         d.run()
         #nsb_discord.run(options['discord_token'], twitter)
 

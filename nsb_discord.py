@@ -34,41 +34,56 @@ class DiscordBot:
         """Runs in the background and calls update_boards every 5 minutes."""
 
         await __client__.wait_until_ready()
+        asyncio.ensure_future(self.on_ready())
+        asyncio.ensure_future(self.message_loop())
+
         await asyncio.sleep(20)
         print('starting background task')
         while True:
             await self.update_boards()
             await asyncio.sleep(300)
 
-    @__client__.event
+    #@__client__.event
     async def on_ready(self):
         """Print login info when logged in."""
         print('logged in as {}'.format(__client__.user.name))
 
 
-    @__client__.event
-    async def on_message(self, message):
+    #@__client__.event
+    async def message_loop(self):
         """Handle incoming messages,
         supports !scorebot update and !scorebot reload."""
 
-        if message.content.startswith('!scorebot'):
-            if message.author.id != '84627464709472256':
-                await self.post('beep boop, not authorized, exterminate')
+        def check(msg):
+            return msg.content.startswith('!scorebot')
 
-            else:
-                if 'update' in message.content:
-                    await self.update_boards()
-                if 'reload' in message.content:
-                    imp.reload(cotn_twitter)
-                if 'logout' in message.content:
-                    __client__.logout()
+        while True:
+            message = await __client__.wait_for_message(check=check)
+
+            if message.content.startswith('!scorebot'):
+                if message.author.id != '84627464709472256':
+                    await self.post('beep boop, not authorized, exterminate')
+
+                else:
+                    print(message.content)
+                    if 'update' in message.content:
+                        await self.update_boards()
+                        print('updated')
+                    elif 'reload' in message.content:
+                        imp.reload(cotn_twitter)
+                        print('reloaded')
+                    elif 'logout' in message.content:
+                        await __client__.logout()
+                        print('logged out')
+                    else:
+                        print('unknown command')
 
     async def post(self, text, channel_id='296636142210646016'):
         """Posts text to channel channel_id."""
         channel = __client__.get_channel(channel_id)
         await __client__.send_message(channel, text)
 
-    def run(self,):
+    def run(self):
         """Runs the discord bot."""
         __client__.loop.create_task(self.background_task())
         __client__.run(self.token)

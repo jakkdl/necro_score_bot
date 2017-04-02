@@ -210,7 +210,7 @@ def postDaily(date, twitter):
 
 def compose_tweet(data, linked_data):
     msg = composeMessage(data[1], data[0], url=True)
-    handle = linked_data['twitter']['name']
+    handle = linked_data['twitter']['nickname']
     if handle:
         if data[1]['rank'] <= 5:
             return '.@{} {}'.format(handle, msg)
