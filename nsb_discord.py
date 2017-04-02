@@ -10,18 +10,11 @@ client = discord_api.Client()
 global_twitter = None
 
 async def update_boards(twitter):
-    "84627464709472256" "jakkdl#1436"
-    #s = client.get_server('296608387808886784') #tnsb
-    s = client.get_server('83287148966449152') #necrodancer
     for msg, linked_data in cotn_twitter.update(twitter):
-        disc_data = linked_data['discord']
-        snowflake = None
-        if disc_data['username']:
-            snowflake = s.get_member_named('{}#{}'.format(
-                disc_data['username'], disc_data['discriminator']))
+        disc_id = linked_data['discord']['id']
 
-        if snowflake:
-            await post('<@{}>{}'.format(snowflake.id, msg))
+        if disc_id:
+            await post('<@{}>{}'.format(disc_id, msg))
         else:
             await post('{}{}'.format(linked_data['steam']['personaname'],
                 msg))
