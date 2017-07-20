@@ -4,10 +4,10 @@ import nsb_database
 import nsb_format_points
 import nsb_steam
 ##character
-#All-Char, story mode, Aria, Bard, Bolt, Cadence, Coda, Dorian, Dove, Eli,  Melody, Monk, None
+#All-Char DLC, All-Char, story mode, Aria, Bard, Bolt, Cadence, Coda, Diamond, Dorian, Dove, Eli, Mary, Melody, Monk, Nocturna, Tempo, None
 
 ##Mode
-#Speed, Score,  Deathless, Daily, None
+#Speed, Score, Deathless, Daily, None
 
 ##dlc
 #True, False
@@ -22,12 +22,12 @@ import nsb_steam
 #True, False
 
 ##extras
-extras = ['no return', 'hard mode']
+extras = ['no return', 'hard', 'phasing', 'mystery', 'randomizer']
 
 def extractCharacter(name):
-    names = ['all char', 'story mode', 'aria', 'bard', 'bolt',
+    names = ['all chars dlc', 'all char', 'story mode', 'aria', 'bard', 'bolt',
             'coda', 'dorian', 'dove', 'eli', 'melody', 'monk',
-            'nocturna', 'diamond']
+            'nocturna', 'diamond', 'tempo', 'mary']
     for i in names:
         if i in name:
             return i
@@ -39,7 +39,7 @@ def extractCharacter(name):
 
 def checkCadence(name):
     delete = ['hardcore', 'seeded', 'deathless',
-            'speedrun', 'co-op', 'custom', '_prod', '_dev', 'dlc']
+        'speedrun', 'co-op', 'custom', '_prod', '_dev', 'dlc']
     delete += extras
     for i in delete:
         name = name.replace(i, '')
@@ -206,11 +206,11 @@ class steam_board:
 
 
         if self._mode == 'deathless':
-            if self._character == 'all char' or self._character == 'story mode':
+            if self._character == 'all char' or self._character == 'all chars dlc' or self._character == 'story mode':
                 return False
 
         if self._seeded:
-            if self._character == 'all char' or self._character == 'story mode':
+            if self._character == 'all char' or self._character == 'all chars dlc' or self._character == 'story mode':
                 return False
             return True # <3 Grimy
         if self._mode != None:
@@ -221,6 +221,8 @@ class steam_board:
     def toofzChar(self, char):
         if char == 'all char':
             return 'all'
+        if char == 'all chars dlc':
+            return 'all-characters-amplified'
         if char == 'story mode':
             return 'story'
         return char
