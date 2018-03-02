@@ -220,11 +220,11 @@ class steam_board:
 
     def toofzChar(self, char):
         if char == 'all char':
-            return 'all'
+            return 'all-characters'
         if char == 'all chars dlc':
             return 'all-characters-amplified'
         if char == 'story mode':
-            return 'story'
+            return 'story-mode'
         return char
     
 
@@ -242,13 +242,13 @@ class steam_board:
 
 
     def toofzUrl(self):
-        base = 'http://crypt.toofz.com/leaderboards/'
+        base = 'https://crypt.toofz.com/leaderboards/'
         if self._dlc:
             base += 'amplified/'
 
         if self.daily():
-            return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
-        #http://crypt.toofz.com/Leaderboards/Daily/2015/05/27
+            return base + 'daily?date=' + self._date.strftime('%Y-%m-%d')
+        #https://crypt.toofz.com/leaderboards/daily?date=2015-05-27
 
         char = self.toofzChar(self._character)
         mode = self._mode
