@@ -65,7 +65,12 @@ def checkCustomMusic(name):
 def checkExtraModes(name):
     extraModes = []
     for mode in extras:
-        if mode in name:
+        if mode == 'hard':
+            if ('coda' in name) & ('hard mode' in name):
+                extraModes.append(mode)
+            elif 'hard_prod' in name:
+                extraModes.append(mode)
+        elif mode in name:
             extraModes.append(mode)
     return extraModes
 
