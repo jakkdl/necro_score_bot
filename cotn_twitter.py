@@ -153,7 +153,7 @@ def composeMessage(person, board, twitter):
         name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
 
     if 'steam_id' in person:
-        community_manager = '@Arachness_'
+        community_manager = '@AlexisYj'
         if nsb_steam.known_cheater(person['steam_id']):
             name = '{}, cheater: {}'.format(community_manager, name)
             tag = ''
