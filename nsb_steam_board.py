@@ -204,11 +204,7 @@ class steam_board:
         return base + '%s/%s'%(char, mode)
 
     def parseResponse(self, response):
-        return nsb_database.xmlToList(response, 'leaderboard')
-
-
-    def getTwitterHandle(self, person, twitter):
-        return nsb_steam.getTwitterHandle(int(person['steam_id']), twitter)
+        return nsb_database.xml_to_list(response, 'leaderboard')
 
 
 

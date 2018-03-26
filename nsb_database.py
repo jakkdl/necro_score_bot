@@ -3,13 +3,15 @@ import xml.etree.ElementTree as ET
 
 import nsb_steam
 
-def entryIndex(xml):
+def entry_index(xml):
+    """returns at which index the entries are"""
     for index, value in enumerate(xml):
         if value.tag == 'entries':
             return index
     raise Exception('no index tag in xml')
 
-def convertIfPossible(data):
+def convert_if_possible(data):
+    """Converts data to int or float, if possible. Otherwise returns data"""
     try:
         return int(data)
     except (ValueError, TypeError):
@@ -22,20 +24,20 @@ def convertIfPossible(data):
 
     return data
 
-def xmlToList(response, responseType):
+def xml_to_list(response, responseType):
     text = nsb_steam.decodeResponse(response)
     data = ET.fromstring(text)
-    return xmlToList_internal(data, responseType)
+    return xml_to_list_internal(data, responseType)
 
-def xmlToList_file(path, responseType):
+def xml_to_list_file(path, responseType):
     tree = ET.parse(path)
     root = tree.getroot()
-    return xmlToList_internal(root, responseType)
+    return xml_to_list_internal(root, responseType)
 
-def xmlToList_internal(data, responseType):
+def xml_to_list_internal(data, responseType):
     result = []
     if responseType == 'leaderboard':
-        index = entryIndex(data)
+        index = entry_index(data)
         entries = data[index]
     elif responseType == 'index':
         entries = data[3:]
@@ -51,7 +53,7 @@ def xmlToList_internal(data, responseType):
                 tag = 'points'
             elif tag == 'steamid':
                 tag = 'steam_id'
-            dictEntry[tag] = convertIfPossible(data.text)
+            dictEntry[tag] = convert_if_possible(data.text)
 
         result.append(dictEntry)
 

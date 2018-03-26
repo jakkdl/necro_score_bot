@@ -10,16 +10,16 @@ class index:
     def fetch(self):
         url = nsb_steam.leaderboardUrl()
         response = nsb_steam.fetchUrl(url)
-        self.data = nsb_database.xmlToList(response=response, responseType='index')
+        self.data = nsb_database.xml_to_list(response=response, responseType='index')
 
     def read_pickle(self):
         self.data = nsb_database.unpickle(self.path)
     
     def read_xml(self):
-        self.data = nsb_database.xmlToList_file(self.path, responseType='index')
+        self.data = nsb_database.xml_to_list(self.path, responseType='index')
 
     def write(self):
-        nsb_database.pickle(data=self.data, path=self.path)
+        nsb_database.pickle_file(data=self.data, path=self.path)
 
     def entries(self):
         if self.data == None:

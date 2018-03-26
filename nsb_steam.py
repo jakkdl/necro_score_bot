@@ -3,7 +3,6 @@ import urllib.request
 import os
 import codecs
 import json
-import re
 import time
 import sys
 
@@ -19,14 +18,17 @@ def fetchUrl(url, path=None):
             break
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
             tries -= 1
-            print('Catched "' + str(e) + '" fetching', url, 'trying', tries, 'more times in 5 seconds')
+            print('Catched "' + str(e) + '" fetching',
+                  url, 'trying', tries, 'more times in 5 seconds')
             time.sleep(5)
             if tries == 0:
                 raise LookupError('Failed to fetch', url)
-        except:
+        except Exception as e:
             tries -= 1
-            print('Catched unexpected error: "' + str(sys.exc_info()[0]) + '" fetching', url, 'trying', tries, 'more times in 5 seconds')
+            print('Catched unexpected error: "' + str(sys.exc_info()[0]) +
+                  '" fetching', url, 'trying', tries, 'more times in 5 seconds')
             print(sys.exc_info())
+            print(e)
             time.sleep(5)
             if tries == 0:
                 raise LookupError('Failed to fetch leaderboard at ' + url)
@@ -44,10 +46,6 @@ def decodeResponse(response, re_codec='utf-8'):
     text = data.decode(re_codec)
     return text
 
-def downloadIndex(path):
-    boardFile = path + 'leaderboards.xml'
-    fetchUrl(leaderboardsurl, boardFile)
-
 def fetchJson(url):
     response = fetchUrl(url)
     reader = codecs.getreader('utf-8')
@@ -56,10 +54,10 @@ def fetchJson(url):
 def get_linked_handles(steam_id):
     if not isinstance(steam_id, str):
         steam_id = str(steam_id)
-    base = 'https://api.necrolab.com/players/player?'
-    url = base + 'steamid={}'.format(steam_id)
-    obj = fetchJson(url)
-    return obj['data']['linked']
+        base = 'https://api.necrolab.com/players/player?'
+        url = base + 'steamid={}'.format(steam_id)
+        obj = fetchJson(url)
+        return obj['data']['linked']
 
 
 def known_cheater(steam_id):

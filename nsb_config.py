@@ -56,9 +56,7 @@ _parser = argparse.ArgumentParser()
 _parser.add_argument('action',
                      help='action to perform',
                      choices=['init',
-                         'postDaily',
                          'update',
-                         'printBoard',
                          'discord',
                          'none'])
  
