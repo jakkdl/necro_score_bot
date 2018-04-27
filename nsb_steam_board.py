@@ -339,7 +339,7 @@ class steam_board:
             return nsb_format_points.relativeProgress(points, prevPoints)
 
     def impossiblePoints(self, person):
-        if self._mode == 'score' and person['points'] > 200000:
+        if self._mode == 'score' and person['points'] > 1000000:
             return True
         return False
 
