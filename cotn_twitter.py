@@ -52,10 +52,10 @@ def update(twitter):
                     continue
                 if deletedEntries > 0:
                     print("Found", deletedEntries, "deleted entries in", str(board))
-                if deletedEntries >= len(board.history):
-                    raise Exception('ERROR: {} {} all entries deleted'.format(deletedEntries, board))
-                if deletedEntries >= 30:
-                    raise Exception('ERROR: {} too many deleted entries'.format(deletedEntries))
+                    if deletedEntries >= len(board.history):
+                        raise Exception('ERROR: {} {} all entries deleted'.format(deletedEntries, board))
+                    if deletedEntries >= 30:
+                        raise Exception('ERROR: {} too many deleted entries'.format(deletedEntries))
                 entries = board.diffingEntries(twitter=twitter)
 
             for entry in entries:
