@@ -1,6 +1,3 @@
-import xml.etree.ElementTree as ET
-import os
-import os.path
 import time
 import datetime
 
@@ -8,17 +5,16 @@ import nsb_leaderboard
 import nsb_steam_board
 import nsb_steam
 import nsb_index
-import nsb_database
 import nsb_format_points
 
 from nsb_config import options
+
 
 def update(twitter):
     print('start at: ', time.strftime('%c'))
 
     index = nsb_index.index()
     index.fetch()
-
 
     for index_entry in index.entries():
         steam_board = nsb_steam_board.steam_board(index_entry)
@@ -39,7 +35,6 @@ def update(twitter):
                 if options['backup']:
                     board.write()
 
-
             if not board.hasFile():
                 entries = board.topEntries(5)
             else:
@@ -48,14 +43,18 @@ def update(twitter):
                     deletedEntries = board.checkForDeleted(90)
                 except:
                     print('checkForDeleted threw exception, skipping')
-                    #we probably have an older leaderboard
+                    # we probably have an older leaderboard
                     continue
                 if deletedEntries > 0:
-                    print("Found", deletedEntries, "deleted entries in", str(board))
+                    print(f'Found {deletedEntries} deleted entries in {str(board)}')
                     if deletedEntries >= len(board.history):
-                        raise Exception('ERROR: {} {} all entries deleted'.format(deletedEntries, board))
+                        raise Exception(
+                            f'ERROR: {deletedEntries} {board} all entries deleted'
+                        )
                     if deletedEntries >= 30:
-                        raise Exception('ERROR: {} too many deleted entries'.format(deletedEntries))
+                        raise Exception(
+                            f'ERROR: {deletedEntries} too many deleted entries'
+                        )
                 entries = board.diffingEntries(twitter=twitter)
 
             for entry in entries:
@@ -97,23 +96,23 @@ def postDaily(date, twitter):
         if options['debug']:
             print(message)
 
+
 def composeMessage(person, board, twitter):
-    score = person['points']
+    # score = person['points']
     rank = int(person['rank'])
 
     if 'histPoints' in person:
         hasHist = True
-        histPoints = person['histPoints']
+        # histPoints = person['histPoints']
         histRank = int(person['histRank'])
     else:
         hasHist = False
-        histPoints = -1
+        # histPoints = -1
         histRank = -1
 
     url = board.getUrl(person)
 
     strPoints = board.formatPoints(person)
-
 
     if rank < histRank or histRank == -1:
         inter1 = ' claims rank '
@@ -126,18 +125,14 @@ def composeMessage(person, board, twitter):
         inter1 = ', '
         inter2 = nsb_format_points.nth(rank) + ' in '
         inter3 = ', improves'
-        relRank = ''
+        # relRank = ''
         if board.board.pre_unit():
             inter3 += ' ' + board.board.pre_unit()
         inter3 += ' to '
 
-
-
-
     tag = ' #necrodancer'
 
-
-    #TODO: yo this shit is unreadable
+    # TODO: yo this shit is unreadable
     if 'twitter_username' in person:
         twitterHandle = person['twitter_username']
     else:
@@ -149,19 +144,29 @@ def composeMessage(person, board, twitter):
             name = '.' + name
     elif 'name' in person:
         name = person['name']
-    else:
+    elif options['steam_key']:
         name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
+    else:
+        name = str(person['steam_id'])
 
     if 'steam_id' in person:
         community_manager = '@NecroDancerGame'
         if nsb_steam.known_cheater(person['steam_id']):
-            name = '{}, cheater: {}'.format(community_manager, name)
+            name = f'{community_manager}, cheater: {name}'
             tag = ''
         elif board.impossiblePoints(person):
-            name = '{}, bugged: {}'.format(community_manager, name)
+            name = f'{community_manager}, bugged: {name}'
             tag = ''
 
-    full = name + inter1 + str(board.realRank(rank)) + inter2 + str(board) + inter3 + strPoints
+    full = (
+        name
+        + inter1
+        + str(board.realRank(rank))
+        + inter2
+        + str(board)
+        + inter3
+        + strPoints
+    )
 
     length = len(full)
     if length + 24 < 140:
@@ -171,12 +176,8 @@ def composeMessage(person, board, twitter):
 
     elif length > 140:
         full = full[:140]
-    
-
 
     return full
-
-
 
 
 def composeDailyMessage(persons, board, twitter):
@@ -192,12 +193,11 @@ def composeDailyMessage(persons, board, twitter):
             name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
         namescore_list.append(str(name) + ' (' + str(person['points']) + ')')
 
-
-
     namescores_string = ', '.join(map(str, namescore_list))
     date_string = board.board._date.strftime("%b%d")
     url = board.getUrl()
     tag = '#necrodancer'
 
-    return ' '.join(map(str, ["Top scores for", date_string, "Daily:",
-            namescores_string, url, tag]))
+    return ' '.join(
+        map(str, ["Top scores for", date_string, "Daily:", namescores_string, url, tag])
+    )
