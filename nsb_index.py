@@ -5,7 +5,7 @@ import nsb_database
 
 
 class index:
-    def __init__(self): #, saveToFile=True):
+    def __init__(self):  # , saveToFile=True):
         self.path = options['data'] + 'leaderboards.xml'
         self.data = None
 

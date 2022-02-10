@@ -40,8 +40,10 @@ def fetchUrl(url, path=None):
 
 
 def boardUrl(lbid, start, end):
-    return (f'http://steamcommunity.com/stats/247080/leaderboards/'
-            f'{lbid}/?xml=1&start={start}&end={end}')
+    return (
+        f'http://steamcommunity.com/stats/247080/leaderboards/'
+        f'{lbid}/?xml=1&start={start}&end={end}'
+    )
 
 
 def leaderboardUrl():
@@ -56,7 +58,7 @@ def decodeResponse(response, re_codec='utf-8'):
 
 def downloadIndex(path):
     boardFile = path + 'leaderboards.xml'
-    #fetchUrl(leaderboardsurl, boardFile)
+    # fetchUrl(leaderboardsurl, boardFile)
     fetchUrl(leaderboardUrl(), boardFile)
 
 

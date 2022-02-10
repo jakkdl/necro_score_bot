@@ -202,10 +202,7 @@ class steam_board:
             return 3
         if self._seeded:
             return 5
-        if self._mode in ('deathless',
-                'score',
-                'speed',
-                'daily'):
+        if self._mode in ('deathless', 'score', 'speed', 'daily'):
             return 5
         if self._mode == 'daily':
             return 3
@@ -216,29 +213,23 @@ class steam_board:
 
     def include(self):
 
-        if (self._availability != 'prod'
-                or self._customMusic
-                or (self._coop and self._seeded)
-                or (self._seeded and self._mode == 'deathless')
-                or self._mode == 'daily'
-                or self._character is None
-                or self._coop):
+        if (
+            self._availability != 'prod'
+            or self._customMusic
+            or (self._coop and self._seeded)
+            or (self._seeded and self._mode == 'deathless')
+            or self._mode == 'daily'
+            or self._character is None
+            or self._coop
+        ):
             return False
 
         if self._mode == 'deathless':
-            if (self._character in (
-                'all char',
-                'all chars dlc',
-                'story mode')
-                ):
+            if self._character in ('all char', 'all chars dlc', 'story mode'):
                 return False
 
         if self._seeded:
-            if (
-                self._character in ('all char',
-                    'all chars dlc',
-                    'story mode')
-            ):
+            if self._character in ('all char', 'all chars dlc', 'story mode'):
                 return False
             return True  # <3 Grimy
 

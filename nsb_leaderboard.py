@@ -124,7 +124,7 @@ class leaderboard:
     def __str__(self):
         return str(self.board)
 
-    #def __repr__(self):
+    # def __repr__(self):
     #    # print(self.orig_name)
     #    return repr(self.info)
 
