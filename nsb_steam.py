@@ -9,6 +9,7 @@ import time
 from nsb_config import options
 from nsb_twitter import twitter
 
+
 def fetchUrl(url, path=None):
     tries = 3
     while True:
@@ -44,15 +45,18 @@ def decodeResponse(response, re_codec='utf-8'):
     text = data.decode(re_codec)
     return text
 
+
 def fetchJson(url):
     response = fetchUrl(url)
     reader = codecs.getreader('utf-8')
     return json.load(reader(response))
 
+
 def downloadIndex(path):
     boardFile = path + 'leaderboards.xml'
     # fetchUrl(leaderboardsurl, boardFile)
     fetchUrl(leaderboardUrl(), boardFile)
+
 
 def fetch_steamname(steam_id):
     url = (
@@ -61,6 +65,7 @@ def fetch_steamname(steam_id):
     )
     obj = fetchJson(url)
     return obj['response']['players'][0]['personaname']
+
 
 def getTwitterHandle(steam_id):
     url = f'http://steamcommunity.com/profiles/{steam_id}'
@@ -80,7 +85,6 @@ def getTwitterHandle(steam_id):
 
     print(f"{handle} in steam profile but not valid")
     return None
-
 
 
 def known_cheater(steam_id):

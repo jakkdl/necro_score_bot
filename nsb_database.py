@@ -2,12 +2,14 @@ import xml.etree.ElementTree as ET
 
 import nsb_steam
 
+
 def entry_index(xml):
     """returns at which index the entries are"""
     for index, value in enumerate(xml):
         if value.tag == 'entries':
             return index
     raise Exception('no index tag in xml')
+
 
 def convert_if_possible(data):
     """Converts data to int or float, if possible. Otherwise returns data"""
@@ -23,15 +25,18 @@ def convert_if_possible(data):
 
     return data
 
+
 def xml_to_list(response, responseType):
     text = nsb_steam.decodeResponse(response)
     data = ET.fromstring(text)
     return xml_to_list_internal(data, responseType)
 
+
 def xml_to_list_file(path, responseType):
     tree = ET.parse(path)
     root = tree.getroot()
     return xml_to_list_internal(root, responseType)
+
 
 def xml_to_list_internal(xml_data, responseType):
     result = []

@@ -260,7 +260,7 @@ class steam_board:
             base += 'amplified/'
 
         if self.daily():
-            #return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
+            # return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
             return base + 'daily?date=' + self._date.strftime('%Y-%m-%d')
         # https://crypt.toofz.com/leaderboards/daily?date=2015-05-27
 

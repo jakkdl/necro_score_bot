@@ -12,6 +12,7 @@ import nsb_format_points
 
 from nsb_config import options
 
+
 def print_board(num=5):
     if not options['board']:
         raise AssertionError('You must specify a board to print')
@@ -19,19 +20,21 @@ def print_board(num=5):
     index = nsb_index.index()
     index.fetch()
 
-    boards_to_print = [e for e in index.entries() if (
-        options['board'].lower() in e['display_name'].lower() or
-        options['board'].lower() in e['name'].lower())]
+    boards_to_print = [
+        e
+        for e in index.entries()
+        if (
+            options['board'].lower() in e['display_name'].lower()
+            or options['board'].lower() in e['name'].lower()
+        )
+    ]
 
     for index_entry in boards_to_print:
         print(index_entry)
         steam_board = nsb_steam_board.steam_board(index_entry)
         board = nsb_leaderboard.leaderboard(steam_board)
         board.fetch()
-        entries = board.topEntries(
-                num=num,
-                includeBoard=True,
-                necrolab_lookup=True)
+        entries = board.topEntries(num=num, includeBoard=True, necrolab_lookup=True)
         for entry in entries:
             print(entry)
 
@@ -44,14 +47,13 @@ def update(twitter=None, numDiscord=50, numTwitter=5):
 
     res = []
     num = max(numDiscord, numTwitter)
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=50) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         # Start the load operations and mark each future
         # with its index_entry
         future_to_entry = {
-            executor.submit(update_board,
-                            index_entry, num): index_entry for index_entry in
-            index.entries()}
+            executor.submit(update_board, index_entry, num): index_entry
+            for index_entry in index.entries()
+        }
 
         future_to_linked_handles = {}
         for future in concurrent.futures.as_completed(future_to_entry):
@@ -65,18 +67,21 @@ def update(twitter=None, numDiscord=50, numTwitter=5):
                     continue
                 for entry in data:
                     print(entry)
-                    future_to_linked_handles[executor.submit(
-                        nsb_steam.get_linked_handles,
-                        entry[1]['steam_id'],
-                        options['necrolab'])] = entry
+                    future_to_linked_handles[
+                        executor.submit(
+                            nsb_steam.get_linked_handles,
+                            entry[1]['steam_id'],
+                            options['necrolab'],
+                        )
+                    ] = entry
 
         for future in concurrent.futures.as_completed(future_to_linked_handles):
             data = future_to_linked_handles[future]
-            #try:
+            # try:
             linked_data = future.result()
-            #except Exception as exc:
+            # except Exception as exc:
             #    print(f"{data} generated an exception: {exc} ; {sys.exc_info()}")
-            #else:
+            # else:
             res.append((data, linked_data))
             if options['debug']:
                 pprint.pprint((data, linked_data))
@@ -85,9 +90,9 @@ def update(twitter=None, numDiscord=50, numTwitter=5):
     for data, linked_data in res:
         board = data[0]
         person = data[1]
-        if (linked_data['twitter']['nickname'] or
-                (not data[0].board._seeded
-                 and data[1]['rank'] <= numTwitter)):
+        if linked_data['twitter']['nickname'] or (
+            not data[0].board._seeded and data[1]['rank'] <= numTwitter
+        ):
             t = compose_tweet(data, linked_data)
             if options['debug']:
                 print(t)
@@ -96,20 +101,21 @@ def update(twitter=None, numDiscord=50, numTwitter=5):
                 else:
                     print('skipping twitter')
 
-
-        if (linked_data['discord']['id'] or
-                discord_include(person, board)):
-            discord_messages.append((composeMessage(data[1], data[0]),
-                                     linked_data))
-            #TODO: yield
+        if linked_data['discord']['id'] or discord_include(person, board):
+            discord_messages.append((composeMessage(data[1], data[0]), linked_data))
+            # TODO: yield
         else:
-            print(f"skipping discord, {data[1]['rank']} < "
-                    f"{math.ceil(0.10*len(board.data))} and no id "
-                    f"{linked_data['discord']['id']}")
+            print(
+                f"skipping discord, {data[1]['rank']} < "
+                f"{math.ceil(0.10*len(board.data))} and no id "
+                f"{linked_data['discord']['id']}"
+            )
 
     print('finished at: ', time.strftime('%c'))
     return discord_messages
-#=======
+
+
+# =======
 #    for index_entry in index.entries():
 #        steam_board = nsb_steam_board.steam_board(index_entry)
 #        board = nsb_leaderboard.leaderboard(steam_board)
@@ -150,8 +156,7 @@ def update(twitter=None, numDiscord=50, numTwitter=5):
 #                            f'ERROR: {deletedEntries} too many deleted entries'
 #                        )
 #                entries = board.diffingEntries(twitter=twitter)
-#>>>>>>> master
-
+# >>>>>>> master
 
 
 def discord_include(person, board):
@@ -160,13 +165,13 @@ def discord_include(person, board):
     if rank <= 3:
         return True
     if board.board._mode == 'score':
-        if rank <= math.ceil(entries*0.05):
+        if rank <= math.ceil(entries * 0.05):
             return True
 
         print('score not within 5%')
         return False
 
-    if rank <= math.ceil(entries*0.10):
+    if rank <= math.ceil(entries * 0.10):
         return True
 
     print('entry not within 10%')
@@ -178,11 +183,10 @@ def check_deleted(board, num):
         deletedEntries = board.checkForDeleted(num)
     except Exception as e:
         print(f'checkForDeleted threw exception {e} in board {board}, skipping')
-        #we probably have an older leaderboard
+        # we probably have an older leaderboard
         return True
 
-    if (deletedEntries >= len(board.history) or
-        deletedEntries > 60):
+    if deletedEntries >= len(board.history) or deletedEntries > 60:
         print(f'ERROR: {deletedEntries} too many deleted entries')
         return True
     if deletedEntries > 0:
@@ -207,17 +211,18 @@ def update_board(index_entry, num=100):
         entries = None
 
     elif not board.hasFile():
-        entries = board.topEntries(num=5, #TODO: 5?
-                                   includeBoard=True,
-                                   necrolab_lookup=True)
+        entries = board.topEntries(
+            num=5, includeBoard=True, necrolab_lookup=True  # TODO: 5?
+        )
     else:
         board.read()
 
         if check_deleted(board, num):
             entries = None
         else:
-            entries = board.diffingEntries(num=num, includeBoard=True,
-                    necrolab_lookup=True)
+            entries = board.diffingEntries(
+                num=num, includeBoard=True, necrolab_lookup=True
+            )
 
     if options['backup']:
         board.write()
@@ -237,11 +242,8 @@ def compose_tweet(data, linked_data):
     return f"{linked_data['steam']['personaname']} {msg}"
 
 
-
-
-
 def composeMessage(person, board, url=False):
-#def composeMessage(person, board, twitter):
+    # def composeMessage(person, board, twitter):
     # score = person['points']
     rank = int(person['rank'])
 
@@ -275,26 +277,26 @@ def composeMessage(person, board, url=False):
             inter3 += ' ' + board.board.pre_unit()
             inter3 += ' to '
 
-    #tag = ' #necrodancer'
+    # tag = ' #necrodancer'
 
     ## TODO: yo this shit is unreadable
-    #if 'twitter_username' in person:
+    # if 'twitter_username' in person:
     #    twitterHandle = person['twitter_username']
-    #else:
+    # else:
     #    twitterHandle = board.getTwitterHandle(person, twitter)
 
-    #if twitterHandle:
+    # if twitterHandle:
     #    name = '@' + twitterHandle
     #    if board.includePublic(person):
     #        name = '.' + name
-    #elif 'name' in person:
+    # elif 'name' in person:
     #    name = person['name']
-    #elif options['steam_key']:
+    # elif options['steam_key']:
     #    name = nsb_steam.steamname(int(person['steam_id']), options['steam_key'])
-    #else:
+    # else:
     #    name = str(person['steam_id'])
 
-    #if 'steam_id' in person:
+    # if 'steam_id' in person:
     #    community_manager = '@NecroDancerGame'
     #    if nsb_steam.known_cheater(person['steam_id']):
     #        name = f'{community_manager}, cheater: {name}'
@@ -303,23 +305,21 @@ def composeMessage(person, board, url=False):
     #        name = f'{community_manager}, bugged: {name}'
     #        tag = ''
 
-
     full = inter1 + str(board.realRank(rank)) + inter2 + str(board) + inter3 + strPoints
     if url:
         full += f' {localurl}'
 
-#   length = len(full)
-#   if length + 24 < 140:
+    #   length = len(full)
+    #   if length + 24 < 140:
     #       full += ' ' + url
     #       if length + 24 + len(tag) < 140:
-        #           full += tag
+    #           full += tag
 
-#   elif length > 140:
+    #   elif length > 140:
     #       full = full[:140]
 
-
-
     return full
+
 
 #    full = (
 #        name
@@ -343,7 +343,7 @@ def composeMessage(person, board, url=False):
 #    return full
 
 
-#def composeDailyMessage(persons, board, twitter):
+# def composeDailyMessage(persons, board, twitter):
 #
 #    namescore_list = []
 #

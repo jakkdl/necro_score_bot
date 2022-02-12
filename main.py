@@ -20,7 +20,7 @@ def main():
         d = nsb_discord.DiscordBot()
         d.run(options['discord_token'])
 
-    #elif options['action'] == 'postDaily':
+    # elif options['action'] == 'postDaily':
     #    cotn_twitter.postYesterday(twitter)
 
     elif options['action'] == 'printBoard':

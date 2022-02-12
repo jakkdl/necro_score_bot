@@ -11,6 +11,7 @@ import cotn_twitter
 
 PYTHONASYNCIODEBUG = 1
 
+
 class DiscordBot(discord_api.Client):
     """Discord necro_score_bot."""
 
@@ -32,8 +33,7 @@ class DiscordBot(discord_api.Client):
             if disc_id:
                 await self.post(f'<@{disc_id}>{msg}')
             else:
-                await self.post(
-                    f"{linked_data['steam']['personaname']}{msg}")
+                await self.post(f"{linked_data['steam']['personaname']}{msg}")
 
     async def background_task(self):
         """Runs in the background and calls update_boards every 5 minutes."""
@@ -49,8 +49,7 @@ class DiscordBot(discord_api.Client):
     async def on_ready(self):
         """Print login info when logged in."""
         print('logged in as {self.user.name}')
-        #await self.post('online')
-
+        # await self.post('online')
 
     async def on_message(self, message):
         """Handle incoming messages,

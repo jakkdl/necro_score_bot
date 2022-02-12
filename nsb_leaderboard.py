@@ -36,9 +36,7 @@ class leaderboard:
         response = nsb_steam.fetchUrl(self.board._url)
         self.data = self.board.parseResponse(response)
 
-    def topEntries(self, num=None,
-            includeBoard = False,
-            necrolab_lookup = False):
+    def topEntries(self, num=None, includeBoard=False, necrolab_lookup=False):
         if not num:
             num = self.board.entriesToPrivateReportOnRankDiff()
         num = min(num, len(self.data))
@@ -48,7 +46,6 @@ class leaderboard:
                 pass
             res.append((self, self.data[i]))
         return res
-
 
     def checkForDeleted(self, num):
         deleted = 0
@@ -65,8 +62,10 @@ class leaderboard:
                         # print(self.history.index(hist), self.data.index(person))
                         found = True
                     else:
-                        print(f"Found deleted entry due to less points\n"
-                                f"new: {person}\nold: {hist}")
+                        print(
+                            f"Found deleted entry due to less points\n"
+                            f"new: {person}\nold: {hist}"
+                        )
                         raise Exception(
                             'ERROR: Found deleted entry due to less points', person
                         )
@@ -76,10 +75,11 @@ class leaderboard:
                 deleted += 1
         return deleted
 
-    #def diffingEntries(self, num=1,
+    # def diffingEntries(self, num=1,
     #        includeBoard = False,
-    def diffingEntries(self, num=None, twitter=None, includeBoard=False,
-            necrolab_lookup = False):
+    def diffingEntries(
+        self, num=None, twitter=None, includeBoard=False, necrolab_lookup=False
+    ):
         if self.data is None:
             raise Exception('No data')
         if self.history is None:
@@ -111,13 +111,13 @@ class leaderboard:
             found = False
             include = False
 
-            for hist in self.history[:num+10]: #TODO: 10?
-            #for hist in self.history:
+            for hist in self.history[: num + 10]:  # TODO: 10?
+                # for hist in self.history:
                 if person[key] == hist[key]:
                     found = True
 
                     if self.board.report(person, hist, twitter=twitter):
-                    #if person['points'] > hist['points']:
+                        # if person['points'] > hist['points']:
                         person['histRank'] = hist['rank']
                         person['histPoints'] = hist['points']
                         include = True
@@ -146,8 +146,8 @@ class leaderboard:
         return str(self.board)
 
     def __repr__(self):
-        #print(self.orig_name)
-        #return repr(self.info())
+        # print(self.orig_name)
+        # return repr(self.info())
         return str(self.board)
 
     def formatPoints(self, person):
@@ -160,7 +160,7 @@ class leaderboard:
             strPoints += ' ' + self.board.unit()
         return strPoints
 
-    #def includePublic(self, entry):
+    # def includePublic(self, entry):
     #    rank = int(entry['rank'])
     #    if rank <= self.board.entriesToReportOnRankDiff():
     #        # print('rankdiff')
@@ -170,7 +170,7 @@ class leaderboard:
     #        return True
     #    return False
 
-    #def includePrivate(self, entry, twitter):
+    # def includePrivate(self, entry, twitter):
     #    rank = int(entry['rank'])
     #    if (
     #        rank < self.board.entriesToPrivateReportOnRankDiff()
