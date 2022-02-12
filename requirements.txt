@@ -1,0 +1,3 @@
+pylint
+twitter
+discord.py

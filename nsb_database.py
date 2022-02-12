@@ -1,4 +1,3 @@
-import pickle
 import xml.etree.ElementTree as ET
 
 import nsb_steam
@@ -34,13 +33,13 @@ def xml_to_list_file(path, responseType):
     root = tree.getroot()
     return xml_to_list_internal(root, responseType)
 
-def xml_to_list_internal(data, responseType):
+def xml_to_list_internal(xml_data, responseType):
     result = []
     if responseType == 'leaderboard':
-        index = entry_index(data)
-        entries = data[index]
+        index = entry_index(xml_data)
+        entries = xml_data[index]
     elif responseType == 'index':
-        entries = data[3:]
+        entries = xml_data[3:]
     else:
         raise Exception('Unknown responseType')
 
@@ -58,16 +57,3 @@ def xml_to_list_internal(data, responseType):
         result.append(dictEntry)
 
     return result
-
-
-def pickle_file(data, path):
-    with open(path, 'wb') as f:
-        # Pickle the 'data' dictionary using the highest protocol available.
-        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
-
-
-def unpickle(path):
-    with open(path, 'rb') as f:
-        # The protocol version used is detected automatically, so we do not
-        # have to specify it.
-        return pickle.load(f)

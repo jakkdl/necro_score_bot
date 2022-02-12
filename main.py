@@ -1,39 +1,33 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 import shutil
 
-from nsb_config import options
-from nsb_config import default_global_path
-import nsb_twitter
+import nsb_config
 import cotn_twitter
 import nsb_discord
 
 
 def main():
-
-
-    if options['twitter_keys'] != None:
-        twitter = nsb_twitter.twitter(options['twitter_keys'])
-    else:
-        twitter = None
-
-
-
+    options = nsb_config.options
     if options['action'] == 'init':
-        print('copying', default_global_path, 'to', options['config'])
+        print(f"copying {default_global_path} to {options['config']}")
         if not options['dry-run']:
-            shutil.copy(default_global_path, options['config'])
+            shutil.copy(nsb_config.default_global_path, options['config'])
 
     elif options['action'] == 'update':
-        cotn_twitter.update(twitter)
+        cotn_twitter.update()
 
     elif options['action'] == 'discord':
-        d = nsb_discord.DiscordBot(twitter)
+        d = nsb_discord.DiscordBot()
         d.run(options['discord_token'])
 
+    #elif options['action'] == 'postDaily':
+    #    cotn_twitter.postYesterday(twitter)
+
+    elif options['action'] == 'printBoard':
+        cotn_twitter.print_board()
+
     elif options['action'] == 'none':
-        print("exiting")
-
-
+        print('exiting')
 
 
 if __name__ == '__main__':

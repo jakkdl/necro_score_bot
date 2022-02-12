@@ -2,11 +2,12 @@
 cotn_twitter.update()"""
 
 import asyncio
-import imp
+import importlib
+
+import discord as discord_api
 
 import cotn_twitter
 
-import discord as discord_api
 
 PYTHONASYNCIODEBUG = 1
 
@@ -29,11 +30,10 @@ class DiscordBot(discord_api.Client):
             disc_id = linked_data['discord']['id']
 
             if disc_id:
-                await self.post('<@{}>{}'.format(disc_id, msg))
+                await self.post(f'<@{disc_id}>{msg}')
             else:
-                await self.post('{}{}'.format(
-                    linked_data['steam']['personaname'],
-                    msg))
+                await self.post(
+                    f"{linked_data['steam']['personaname']}{msg}")
 
     async def background_task(self):
         """Runs in the background and calls update_boards every 5 minutes."""
@@ -48,7 +48,7 @@ class DiscordBot(discord_api.Client):
 
     async def on_ready(self):
         """Print login info when logged in."""
-        print('logged in as {}'.format(self.user.name))
+        print('logged in as {self.user.name}')
         #await self.post('online')
 
 
@@ -65,7 +65,7 @@ class DiscordBot(discord_api.Client):
                     await self.update_boards()
                     print('updated')
                 elif 'reload' in message.content:
-                    imp.reload(cotn_twitter)
+                    importlib.reload(cotn_twitter)
                     print('reloaded')
                 elif 'logout' in message.content:
                     await self.logout()
@@ -74,9 +74,9 @@ class DiscordBot(discord_api.Client):
                     await self.logout()
                     print('reboot')
                 else:
-                    print('unknown command: {}'.format(message.content))
+                    print(f"unknown command: {message.content}")
 
     async def post(self, text, channel_id='296636142210646016'):
         """Posts text to channel channel_id."""
         channel = self.get_channel(channel_id)
-        await self.send_message(channel, text)
+        await channel.send(text)
