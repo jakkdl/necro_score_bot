@@ -48,7 +48,7 @@ class DiscordBot(discord_api.Client):
 
     async def on_ready(self):
         """Print login info when logged in."""
-        print('logged in as {self.user.name}')
+        print(f'logged in as {self.user.name}')
         # await self.post('online')
 
     async def on_message(self, message):

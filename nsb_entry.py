@@ -1,6 +1,4 @@
 from typing import Optional
-import codecs
-import json
 
 import nsb_steam
 from nsb_config import options
@@ -44,7 +42,3 @@ class Entry:
 
     def fetch_twitter_handle(self):
         pass
-
-    def fetch_linked_handles(self):
-        self.fetch_necrolab()
-        self.fetch_steamname()

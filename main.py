@@ -8,12 +8,8 @@ import nsb_discord
 
 def main():
     options = nsb_config.options
-    if options['action'] == 'init':
-        print(f"copying {default_global_path} to {options['config']}")
-        if not options['dry-run']:
-            shutil.copy(nsb_config.default_global_path, options['config'])
 
-    elif options['action'] == 'update':
+    if options['action'] == 'update':
         cotn_twitter.update()
 
     elif options['action'] == 'discord':
@@ -23,7 +19,7 @@ def main():
     # elif options['action'] == 'postDaily':
     #    cotn_twitter.postYesterday(twitter)
 
-    elif options['action'] == 'printBoard':
+    elif options['action'].lower() == 'printboard':
         cotn_twitter.print_board()
 
     elif options['action'] == 'none':

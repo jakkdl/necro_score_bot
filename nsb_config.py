@@ -3,13 +3,12 @@ import collections
 import configparser
 import abc
 import os
-from typing import Optional
 
 
 def evaluate_path(path):
-    '''
+    """
     Evaluates user/environment variables and relative path.
-    '''
+    """
     path = os.path.expanduser(path)
     path = os.path.expandvars(path)
     path = os.path.abspath(path)
@@ -19,7 +18,7 @@ def evaluate_path(path):
 # inspired by https://bitbucket.org/htv2013/argparse_actions/src
 class _MyAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if isinstance(values, collections.abc.Iterable):
+        if isinstance(values, collections.abc.Iterable) and not isinstance(values, str):
             folders = list(map(self.parse_value, values))
         else:
             folders = self.parse_value(values)
@@ -43,17 +42,17 @@ class _File(_MyAction):
 class _Bool(_MyAction):
     @staticmethod
     def parse_value(value):
-        if value.lower() == 'true':
+        if value.lower() == "true":
             return True
-        if value.lower() == 'false':
+        if value.lower() == "false":
             return False
-        raise argparse.ArgumentTypeError(f'{value} is not a boolean')
+        raise argparse.ArgumentTypeError(f"{value} is not a boolean")
 
 
-class _Read_File(_MyAction):
+class _ReadFile(_MyAction):
     @staticmethod
     def parse_value(value):
-        with open(evaluate_path(value), encoding='utf8') as file:
+        with open(evaluate_path(value), encoding="utf8") as file:
             return file.read().rstrip()
 
 
@@ -62,16 +61,16 @@ class _Directory(_MyAction):
     def parse_value(value):
         string = evaluate_path(value)
         if not os.path.isdir(string):
-            raise argparse.ArgumentTypeError(f'{string} is not a directory')
+            raise argparse.ArgumentTypeError(f"{string} is not a directory")
         return string
 
 
-class _Create_Directory(_MyAction):
+class _CreateDirectory(_MyAction):
     @staticmethod
     def parse_value(value):
         string = evaluate_path(value)
         if not os.path.isdir(string):
-            print(f'Creating directory: {string}')
+            print(f"Creating directory: {string}")
             os.mkdir(string)
         return string
 
@@ -80,156 +79,186 @@ class Options(argparse.ArgumentParser):
     def __init__(self):
         super().__init__()
         self._configparser = configparser.ConfigParser()
-        self._config_values = {}
-        self._options = {}
+        self._config_values = None
+        self._options = argparse.Namespace()
 
     def __getitem__(self, key):
-        return self._options[key]
+        return getattr(self._options, key)
 
-    def add_parameter(  # pylint: disable=arguments-differ
+    def add_parameter(
         self,
         argument: str,
-        config=False,
-        command_line=False,
         **kwargs,
     ):
-        action = kwargs.get('action')
-        if not config and not command_line:
-            config = command_line = True
-        if config:
-            if not action:
-                action = kwargs['type']
-            self._config_values[argument] = action
-        if command_line:
-            super().add_argument(f"--{argument}", **kwargs)
+        # argument = argument.replace('-', '_')
+        super().add_argument(argument, **kwargs)
 
-    def add_action(self, *args, **kwargs):
-        super().add_argument(*args, **kwargs)
+    def parse_config(self) -> argparse.Namespace:
+        path = getattr(self._options, "config")
+        config_args = []
 
-    def read_config(self, path):
-        parser = configparser.ConfigParser()
-        parser.read(path)
-        print('hi')
+        # print('config not a file')
+        if os.path.isfile(path):
+            parser = configparser.ConfigParser()
+            parser.read(path)
 
-        # more friendly error message in case file/section is missing
-        if 'general' not in parser:
-            print(f'Warning: section [general] missing from {path}')
+            # more friendly error message in case file/section is missing
+            if "general" not in parser:
+                print(f"Warning: section [general] missing from {path}")
 
-        # look up expected entries and convert as specified
-        for name, action in self._config_values.items():
-            value = parser['general'].get(name)
+            # look up expected entries and convert as specified
+            for name, value in parser["general"].items():
+                config_args.append(f"--{name.replace('_', '-')}={value}")
 
-            if value is not None:
-                #TODO: Broken
-                self._options[name] = action(value)
+        super().parse_known_args(args=config_args, namespace=self._options)
+        self._config_values = self._options.__dict__.copy()
+        return self._options
 
-    def parse_args(self, args=None, namespace=None):
+    def parse(self):
         # Will exit here if --help is supplied
-        args = super().parse_args(args, namespace).__dict__
-        cl_options = {k: v for k, v in args.items() if v is not None}
+        super().parse_args(namespace=self._options)
 
-        print(cl_options['config'])
-        if os.path.isfile(cl_options['config']):
-            self.read_config(cl_options['config'])
+        # cl_options = {k: v for k, v in self._options.items() if v is not None}
 
-        self._options.update(cl_options)
+        return self._options
 
-print('whoop')
+    def parse_known_args(self, args=None, namespace=None):
+        if namespace is None:
+            namespace = self._options
+        return super().parse_known_args(args, namespace)
+
+    def generate_default_config(self):
+        path = self._config_values.pop("config")
+        values = {key: str(val) for key, val in self._config_values.items()}
+
+        parser = configparser.ConfigParser(defaults=values, default_section="general")
+
+        with open(path, "w", encoding="utf-8") as file:
+            parser.write(file)
+
+
 options = Options()
+
+options.add_parameter(
+    "--config",
+    help="specify config path",
+    metavar="DIRECTORY",
+    action=_File,
+    default=evaluate_path(
+        os.path.join("$XDG_CONFIG_HOME", "necro_score_bot", "necro_score_bot.conf")
+    ),
+)
+
+options.parse_known_args()
 
 
 ####################### COMMAND-LINE ARGS SETTINGS ########################
 
-
 # commands
-options.add_action(
-    'action',
-    help='action to perform',
-    choices=['init', 'update', 'postDaily', 'discord', 'printBoard', 'none'],
-)
 # flags
+
+
 options.add_parameter(
-    'config', help='specify config path', metavar='DIRECTORY', action=_File,
-    command_line=True, default= evaluate_path(
-        os.path.join('$XDG_CONFIG_HOME', 'necro_score_bot', 'necro_score_bot.conf')
-    )
+    "--data-dir",
+    help="specify data directory",
+    metavar="DIRECTORY",
+    action=_CreateDirectory,
+    default=evaluate_path("$XDG_DATA_HOME/necro_score_bot/"),
 )
 
 options.add_parameter(
-    'data', help='specify data path', metavar='DIRECTORY', action=_Create_Directory
+    "--steam-key",
+    help="specify file with steam keys",
+    metavar="FILE",
+    action=_ReadFile,
+    default=evaluate_path("$XDG_CONFIG_HOME/necro_score_bot/steam_key"),
 )
 
 options.add_parameter(
-    'steam-key', help='specify file with steam keys', metavar='FILE', action=_Read_File
-)
-
-options.add_parameter(
-    'discord_token',
-    help='specify file with discord token',
-    metavar='FILE',
+    "--discord_token",
+    help="specify file with discord token",
+    metavar="FILE",
     action=_File,
+    default=evaluate_path("$XDG_CONFIG_HOME/necro_score_bot/discord_token"),
 )
 
-options.add_parameter('board', help='board to update/print', metavar='BOARD',
-        type=str)
-
 options.add_parameter(
-    'twitter-keys',
-    help='Specify directory with twitter keys. ' 'Set to None to disable twitter.',
-    metavar='DIRECTORY',
+    "--twitter-keys",
+    help="Specify directory with twitter keys. Set to None to disable twitter.",
+    metavar="DIRECTORY",
     action=_Directory,
+    default=evaluate_path("$XDG_CONFIG_HOME/necro_score_bot/twitter/"),
 )
 
-# --dry-run requires dest, otherwise it
-#   stores it as dry_run instead of dry-run
-options.add_parameter(
-    'dry-run',
-    help="Don't tweet, download or change any files",
-    action='store_true', config=False,
-    default=False,
-    dest='dry-run',
-)
 
 options.add_parameter(
-    'handle-new',
-    help='Handle boards without history',
-    action='store_true',
-    default=False,
-    dest='handle-new',
-)
-
-options.add_parameter(
-    'debug',
-    help='display debug messages, prints tweets to stdout',
-    action='store_true', config=False,
+    "--handle-new",
+    help="Handle boards without history",
+    action=_Bool,
     default=False,
 )
 
-options.add_parameter(
-    'tweet', help='enable tweeting', action='store_true', default=False, config=False
-)
+options.add_parameter("--tweet", help="enable tweeting", action=_Bool, default=False)
 
 options.add_parameter(
-    'backup',
-    help='backup files to history after downloading',
-    metavar='bool',
+    "--backup",
+    help="backup files to history after downloading",
+    metavar="bool",
     action=_Bool,
     default=True,
 )
 
 options.add_parameter(
-    'churn',
-    help='churn through changes quickly, not composing or posting any messages',
-    action='store_true', config=False,
-    default=False,
-)
-
-options.add_parameter(
-    'necrolab',
-    help='use necrolab api to get linked accounts',
-    metavar='bool',
+    "--necrolab",
+    help="use necrolab api to get linked accounts",
+    metavar="bool",
     action=_Bool,
     default=False,
 )
 
-options.parse_args()
+options.parse_config()
+
+
+## command-line only actions
+options.add_parameter(
+    "action",
+    help="action to perform",
+    choices=["update", "postDaily", "discord", "printBoard", "none"],
+)
+
+options.add_parameter(
+    "--generate-config",
+    help="generate default config",
+    action="store_true",
+    default=False,
+)
+
+options.add_parameter(
+    "--churn",
+    help="churn through changes quickly, not composing or posting any messages",
+    action="store_true",
+    default=False,
+)
+
+options.add_parameter(
+    "--debug",
+    help="display debug messages, prints tweets to stdout",
+    action="store_true",
+    default=False,
+)
+
+options.add_parameter(
+    "--dry-run",
+    help="Don't tweet, download or change any files",
+    action="store_true",
+    default=False,
+)
+
+options.add_parameter(
+    "--board", help="board to update/print", metavar="BOARD", type=str
+)
+
+options.parse()
+
+if options["generate_config"]:
+    options.generate_default_config()

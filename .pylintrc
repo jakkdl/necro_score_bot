@@ -83,16 +83,15 @@ disable=raw-checker-failed,
         locally-disabled,
         file-ignored,
         suppressed-message,
-        useless-suppression,
-        deprecated-pragma,
+        #useless-suppression,
+        #deprecated-pragma,
         use-symbolic-message-instead,
         missing-function-docstring, ## added bad code stuff
         missing-module-docstring,
         missing-class-docstring,
-        invalid-name,
-        no-self-use,
-        bare-except,
-        raise-missing-from,
+        #invalid-name,
+        #bare-except,
+        #raise-missing-from,
         fixme
 
 # Enable the message, report, category or checker with the given id(s). You can
