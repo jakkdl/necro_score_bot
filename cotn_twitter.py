@@ -16,7 +16,7 @@ def print_board(num=5):
     if not options["board"]:
         raise AssertionError("You must specify a board to print")
 
-    index = nsb_index.index()
+    index = nsb_index.Index()
     index.fetch()
 
     boards_to_print = [
@@ -75,7 +75,7 @@ def update_nonthreaded(index, num) -> typing.List[nsb_entry.Entry]:
 def update(num_discord=50, num_twitter=5):
     print("start at: ", time.strftime("%c"))
 
-    index = nsb_index.index()
+    index = nsb_index.Index()
     index.fetch()
 
     num = max(num_discord, num_twitter)
@@ -164,8 +164,8 @@ def discord_include(entry, board):
 def check_deleted(board, num):
     try:
         deleted_entries = board.check_for_deleted(num)
-    except Exception as e:
-        print(f"check_for_deleted threw exception {e} in board {board}, skipping")
+    except Exception as exc:
+        print(f"check_for_deleted threw exception {exc} in board {board}, skipping")
         # we probably have an older leaderboard
         return True
 

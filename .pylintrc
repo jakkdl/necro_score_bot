@@ -89,6 +89,7 @@ disable=raw-checker-failed,
         missing-function-docstring, ## added bad code stuff
         missing-module-docstring,
         missing-class-docstring,
+        line-too-long, # handled by black
         #invalid-name,
         #bare-except,
         #raise-missing-from,
@@ -189,7 +190,7 @@ indent-after-paren=4
 indent-string='    '
 
 # Maximum number of characters on a single line.
-max-line-length=88
+max-line-length=89
 
 # Maximum number of lines in a module.
 max-module-lines=1000

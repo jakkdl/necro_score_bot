@@ -12,8 +12,8 @@ def main():
         cotn_twitter.update()
 
     elif options["action"] == "discord":
-        d = nsb_discord.DiscordBot()
-        d.run(options["discord_token"])
+        discord_client = nsb_discord.DiscordBot()
+        discord_client.run(options["discord_token"])
 
     # elif options['action'] == 'postDaily':
     #    cotn_twitter.postYesterday(twitter)

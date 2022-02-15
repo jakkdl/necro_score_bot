@@ -4,7 +4,7 @@ import nsb_steam
 import nsb_database
 
 
-class index:
+class Index:
     def __init__(self):  # , saveToFile=True):
         self.path = options["data"] + "leaderboards.xml"
         self.data = None
@@ -15,18 +15,18 @@ class index:
         self.data = nsb_database.xml_to_list(response=response, responseType="index")
 
     def read_pickle(self):
-        with open(self.path, "rb") as f:
+        with open(self.path, "rb") as file:
             # The protocol version used is detected automatically, so we do not
             # have to specify it.
-            self.data = pickle.load(f)
+            self.data = pickle.load(file)
 
     def read_xml(self):
         self.data = nsb_database.xml_to_list(self.path, responseType="index")
 
     def write(self):
-        with open(self.path, "wb") as f:
+        with open(self.path, "wb") as file:
             # Pickle the 'data' dictionary using the highest protocol available.
-            pickle.dump(self.data, f, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self.data, file, pickle.HIGHEST_PROTOCOL)
 
     def entries(self):
         if self.data is None:

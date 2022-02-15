@@ -7,6 +7,7 @@ import importlib
 import discord as discord_api
 
 import cotn_twitter
+from nsb_twitter import twitter
 
 
 PYTHONASYNCIODEBUG = 1
@@ -15,9 +16,8 @@ PYTHONASYNCIODEBUG = 1
 class DiscordBot(discord_api.Client):
     """Discord necro_score_bot."""
 
-    def __init__(self, twitter):
+    def __init__(self):
         super().__init__()
-        self.twitter = twitter
 
     def run(self, *args, **kwargs):
         """Runs the discord bot."""
@@ -27,7 +27,7 @@ class DiscordBot(discord_api.Client):
     async def update_boards(self):
         """Fetch all boards and post to twitter (if twitter != None)
         and post to discord"""
-        for msg, linked_data in cotn_twitter.update(self.twitter):
+        for msg, linked_data in cotn_twitter.update(twitter):
             disc_id = linked_data["discord"]["id"]
 
             if disc_id:

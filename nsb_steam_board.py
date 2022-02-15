@@ -1,7 +1,6 @@
 import datetime
 
 import nsb_database
-import nsb_format_points
 import nsb_steam
 import nsb_leaderboard
 
@@ -48,6 +47,9 @@ names = [
     "mary",
 ]
 
+toofz_character_diffs = {"all char": "all-characters",
+        "all chars dlc": "all-characters-amplified",
+        "story mode": "story-mode"}
 
 class SteamBoard(nsb_leaderboard.Leaderboard):
     def __init__(self, index_entry):
@@ -85,7 +87,7 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
             return "speedrun"
         if "hardcore" in self.name:
             return "score"
-        print(f"unknown mode in board {name}")
+        print(f"unknown mode in board {self.name}")
         return None
 
     def _extra_modes(self):
@@ -119,67 +121,61 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
         split = split.split("/")
         return datetime.date(int(split[2]), int(split[1]), int(split[0]))
 
-    def maxLeaderboardEntries(self):
-        # if self._custom_music:
-        # return 1
-        if "coop" in self.name:
-            return 3
-        if "seeded" in self.name:
-            return 5
-        if self.mode in ("deathless", "score", "speed", "daily"):
-            return 5
-        if self.mode == "daily":
-            return 3
-        return None
+    #def maxLeaderboardEntries(self):
+    #    # if self._custom_music:
+    #    # return 1
+    #    if "coop" in self.name:
+    #        return 3
+    #    if "seeded" in self.name:
+    #        return 5
+    #    if self.mode in ("deathless", "score", "speed", "daily"):
+    #        return 5
+    #    if self.mode == "daily":
+    #        return 3
+    #    return None
 
-    def maxCompareEntries(self):
-        return 100
+    #def maxCompareEntries(self):
+    #    return 100
 
-    def toofzChar(self, char):
-        if char == "all char":
-            return "all-characters"
-        if char == "all chars dlc":
-            return "all-characters-amplified"
-        if char == "story mode":
-            return "story-mode"
-        return char
 
-    def toofzSupport(self):
-        if "coop" in self.name or "custom_music" in self.name:
-            return False
-        if not self.mode:
-            return False
-        if len(self._extra_modes()) > 1:
-            print("toofz doesnt support >1 extra modes")
-            return False
-        return True
 
-    def toofzUrl(self):
-        base = "https://crypt.toofz.com/leaderboards/"
-        if "dlc" in self.name:
-            base += "amplified/"
-
-        if self.mode == "daily":
-            # return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
-            return base + "daily?date=" + self._date().strftime("%Y-%m-%d")
-        # https://crypt.toofz.com/leaderboards/daily?date=2015-05-27
-
-        char = self.toofzChar(self._character())
-        mode = self.mode
-        if "seeded" in self.name:
-            mode = "seeded-" + mode
-        if self._extra_modes():
-            mode += "/" + self._extra_modes()[0].replace(" ", "-")
-        return f"{base}{char}{mode}"
 
     def impossible_score(self, data):
         return self.mode == "score" and data["points"] > options["impossible_score"]
 
     def pretty_url(self, person=None):
-        if not self.toofzSupport():
+        def toofz_support():
+            if "coop" in self.name or "custom_music" in self.name:
+                return False
+            if not self.mode:
+                return False
+            if len(self._extra_modes()) > 1:
+                print("toofz doesnt support >1 extra modes")
+                return False
+            return True
+        def toofz_url():
+            base = "https://crypt.toofz.com/leaderboards/"
+            if "dlc" in self.name:
+                base += "amplified/"
+
+            if self.mode == "daily":
+                # return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
+                return base + "daily?date=" + self._date().strftime("%Y-%m-%d")
+            # https://crypt.toofz.com/leaderboards/daily?date=2015-05-27
+
+            char = self._character()
+            char = toofz_character_diffs.get(char, char)
+
+            mode = self.mode
+            if "seeded" in self.name:
+                mode = "seeded-" + mode
+            if self._extra_modes():
+                mode += "/" + self._extra_modes()[0].replace(" ", "-")
+            return f"{base}{char}{mode}"
+        if not toofz_support():
             return ""
 
-        url = self.toofzUrl()
+        url = toofz_url()
         if person is None:
             return url
 
