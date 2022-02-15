@@ -19,13 +19,13 @@ def fetchUrl(url, path=None):
             else:
                 return urllib.request.urlopen(url)
             break
-        except (urllib.error.HTTPError, urllib.error.URLError) as e:
+        except (urllib.error.HTTPError, urllib.error.URLError) as exc:
             tries -= 1
             print(
-                f'Catched "{e}" fetching {url} trying {tries} more times in 5 seconds',
+                f'Catched "{exc}" fetching {url} trying {tries} more times in 5 seconds',
             )
             if tries == 0:
-                raise e
+                raise exc
             time.sleep(5)
 
 

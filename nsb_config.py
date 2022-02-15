@@ -49,13 +49,6 @@ class _Bool(_MyAction):
         raise argparse.ArgumentTypeError(f"{value} is not a boolean")
 
 
-class _ReadFile(_MyAction):
-    @staticmethod
-    def parse_value(value):
-        with open(evaluate_path(value), encoding="utf8") as file:
-            return file.read().rstrip()
-
-
 class _Directory(_MyAction):
     @staticmethod
     def parse_value(value):
@@ -75,23 +68,21 @@ class _CreateDirectory(_MyAction):
         return string
 
 
+def parse_file(value):
+    with open(evaluate_path(value), encoding="utf8") as file:
+        return file.read().rstrip()
+
+
 class Options(argparse.ArgumentParser):
     def __init__(self):
-        super().__init__()
+        super().__init__(add_help=False)
         self._configparser = configparser.ConfigParser()
         self._config_values = None
         self._options = argparse.Namespace()
+        self._post_process: dict[str, callable] = {}
 
     def __getitem__(self, key):
         return getattr(self._options, key)
-
-    def add_parameter(
-        self,
-        argument: str,
-        **kwargs,
-    ):
-        # argument = argument.replace('-', '_')
-        super().add_argument(argument, **kwargs)
 
     def parse_config(self) -> argparse.Namespace:
         path = getattr(self._options, "config")
@@ -128,7 +119,12 @@ class Options(argparse.ArgumentParser):
         return super().parse_known_args(args, namespace)
 
     def generate_default_config(self):
+        # import ipdb; ipdb.set_trace()
+        super().parse_known_args(args=[], namespace=self._options)
+        self._config_values = self._options.__dict__.copy()
+
         path = self._config_values.pop("config")
+        self._config_values.pop("generate_config")
         values = {key: str(val) for key, val in self._config_values.items()}
 
         parser = configparser.ConfigParser(defaults=values, default_section="general")
@@ -136,10 +132,18 @@ class Options(argparse.ArgumentParser):
         with open(path, "w", encoding="utf-8") as file:
             parser.write(file)
 
+    def add_post_process(self, key, func):
+        self._post_process[key] = func
+
+    def post_process(self):
+        for key, func in self._post_process.items():
+            assert key in self._options
+            setattr(self._options, key, func(getattr(self._options, key)))
+
 
 options = Options()
 
-options.add_parameter(
+options.add_argument(
     "--config",
     help="specify config path",
     metavar="DIRECTORY",
@@ -147,6 +151,13 @@ options.add_parameter(
     default=evaluate_path(
         os.path.join("$XDG_CONFIG_HOME", "necro_score_bot", "necro_score_bot.conf")
     ),
+)
+
+options.add_argument(
+    "--generate-config",
+    help="generate default config",
+    action="store_true",
+    default=False,
 )
 
 options.parse_known_args()
@@ -158,7 +169,7 @@ options.parse_known_args()
 # flags
 
 
-options.add_parameter(
+options.add_argument(
     "--data-dir",
     help="specify data directory",
     dest="data",
@@ -167,23 +178,25 @@ options.add_parameter(
     default=evaluate_path("$XDG_DATA_HOME/necro_score_bot/"),
 )
 
-options.add_parameter(
+options.add_argument(
     "--steam-key",
     help="specify file with steam keys",
     metavar="FILE",
-    action=_ReadFile,
+    action=_File,
     default=evaluate_path("$XDG_CONFIG_HOME/necro_score_bot/steam_key"),
 )
+options.add_post_process("steam_key", parse_file)
 
-options.add_parameter(
+options.add_argument(
     "--discord_token",
     help="specify file with discord token",
     metavar="FILE",
     action=_File,
     default=evaluate_path("$XDG_CONFIG_HOME/necro_score_bot/discord_token"),
 )
+options.add_post_process("discord_token", parse_file)
 
-options.add_parameter(
+options.add_argument(
     "--twitter-keys",
     help="Specify directory with twitter keys. Set to None to disable twitter.",
     metavar="DIRECTORY",
@@ -192,16 +205,16 @@ options.add_parameter(
 )
 
 
-options.add_parameter(
+options.add_argument(
     "--handle-new",
     help="Handle boards without history",
     action=_Bool,
     default=False,
 )
 
-options.add_parameter("--tweet", help="enable tweeting", action=_Bool, default=False)
+options.add_argument("--tweet", help="enable tweeting", action=_Bool, default=False)
 
-options.add_parameter(
+options.add_argument(
     "--backup",
     help="backup files to history after downloading",
     metavar="bool",
@@ -209,7 +222,7 @@ options.add_parameter(
     default=True,
 )
 
-options.add_parameter(
+options.add_argument(
     "--necrolab",
     help="use necrolab api to get linked accounts",
     metavar="bool",
@@ -217,49 +230,135 @@ options.add_parameter(
     default=False,
 )
 
-options.parse_config()
+options.add_argument(
+    "--private-report-rank-diff",
+    help="highest rank to report rank increase, if registered",
+    metavar="num",
+    type=int,
+    default=100,
+)
 
+options.add_argument(
+    "--private-report-points-diff",
+    help="highest rank to report points increase, if registered",
+    metavar="num",
+    type=int,
+    default=100,
+)
+
+options.add_argument(
+    "--public-report-rank-diff",
+    help="highest rank to report rank increase",
+    metavar="num",
+    type=int,
+    default=5,
+)
+
+options.add_argument(
+    "--public-report-points-diff",
+    help="highest rank to report points increase",
+    metavar="num",
+    type=int,
+    default=3,
+)
+
+options.add_argument(
+    "--impossible-score",
+    help="score above which it will be reported as bugged",
+    metavar="num",
+    type=int,
+    default=1000000,
+)
+
+options.add_argument(
+    "--deathless-message-new-entry",
+    type=str,
+    default="$NAME$ claims rank $RANK$ in $BOARD$ with $PROGRESS$",
+)
+options.add_argument(
+    "--deathless-message-new-rank",
+    type=str,
+    default="$NAME$ claims rank $RANK$ (+$DELTARANK$) in $BOARD$ with $PROGRESS$ ($DELTAPROGRESS$)",
+)
+options.add_argument(
+    "--deathless-message-same-rank",
+    type=str,
+    default="$NAME$, $RANKTH$ in $BOARD$ improves streak to $PROGRESS$ ($DELTAPROGRESS$)",
+)
+options.add_argument(
+    "--speedrun-message-new-entry",
+    type=str,
+    default="$NAME$ claims rank $RANK$ in $BOARD$ with $TIME$",
+)
+options.add_argument(
+    "--speedrun-message-new-rank",
+    type=str,
+    default="$NAME$ claims rank $RANK$ (+$DELTARANK$) in $BOARD$ with $TIME$ ($DELTATIME$)",
+)
+options.add_argument(
+    "--speedrun-message-same-rank",
+    type=str,
+    default="$NAME$, $RANKTH$ in $BOARD$ improves time to $TIME$ ($DELTATIME$)",
+)
+options.add_argument(
+    "--score-message-new-entry",
+    type=str,
+    default="$NAME$ claims rank $RANK$ in $BOARD$ with $SCORE$ gold",
+)
+options.add_argument(
+    "--score-message-new-rank",
+    type=str,
+    default="$NAME$ claims rank $RANK$ (+$DELTARANK$) in $BOARD$ with $SCORE$ ($DELTASCORE$) gold",
+)
+options.add_argument(
+    "--score-message-same-rank",
+    type=str,
+    default="$NAME$, $RANKTH$ in $BOARD$ improves to $SCORE$ ($DELTASCORE$) gold",
+)
+
+
+if options["generate_config"]:
+    options.generate_default_config()
+else:
+    options.parse_config()
 
 ## command-line only actions
-options.add_parameter(
+options.add_argument(
     "action",
     help="action to perform",
     choices=["update", "postDaily", "discord", "printBoard", "none"],
 )
 
-options.add_parameter(
-    "--generate-config",
-    help="generate default config",
-    action="store_true",
-    default=False,
-)
-
-options.add_parameter(
+options.add_argument(
     "--churn",
     help="churn through changes quickly, not composing or posting any messages",
     action="store_true",
     default=False,
 )
 
-options.add_parameter(
+options.add_argument(
     "--debug",
     help="display debug messages, prints tweets to stdout",
     action="store_true",
     default=False,
 )
 
-options.add_parameter(
+options.add_argument(
     "--dry-run",
     help="Don't tweet, download or change any files",
     action="store_true",
     default=False,
 )
 
-options.add_parameter(
-    "--board", help="board to update/print", metavar="BOARD", type=str
+options.add_argument("--board", help="board to update/print", metavar="BOARD", type=str)
+
+options.add_argument(
+    "-h",
+    "--help",
+    action="help",
+    default=argparse.SUPPRESS,
+    help="show this help message and exit",
 )
 
 options.parse()
-
-if options["generate_config"]:
-    options.generate_default_config()
+options.post_process()

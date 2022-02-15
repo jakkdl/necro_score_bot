@@ -1,53 +1,67 @@
 import pickle
 import os.path
+import abc
 
 import nsb_steam
+import nsb_entry
 
 from nsb_config import options
 
 
-class leaderboard:
-    def __init__(self, board):
-        self.board = board
-
+class Leaderboard:
+    def __init__(self, name, key="steam_id"):
+        self.mode = None
         self.data = None
         self.history = None
 
-        self.path = os.path.join(options["data"], "boards", board._name + ".pickle")
+        # Some other board has "name" as key, but don't remember what
+        self.key = key
 
-    def hasFile(self):
+        self.path = os.path.join(options["data"], "boards", name + ".pickle")
+
+    def has_file(self):
         return self.path is not None and os.path.isfile(self.path)
 
     def read(self):
-        with open(self.path, "rb") as f:
+        with open(self.path, "rb") as file:
             # The protocol version used is detected automatically, so we do not
             # have to specify it.
-            self.history = pickle.load(f)
+            self.history = pickle.load(file)
 
     def write(self):
         if self.data is None:
             raise Exception("Trying to pickle with no data read")
-        with open(self.path, "wb") as f:
+        with open(self.path, "wb") as file:
             # Pickle the 'data' dictionary using the highest protocol available.
-            pickle.dump(self.data, f, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self.data, file, pickle.HIGHEST_PROTOCOL)
 
+    @abc.abstractmethod
     def fetch(self):
+        pass
         # url = nsb_steam.boardUrl(self.lbid, 1, 100)
-        response = nsb_steam.fetchUrl(self.board._url)
-        self.data = self.board.parseResponse(response)
+        # response = nsb_steam.fetchUrl(self._url)
+        # self.data = self.board.parseResponse(response)
 
-    def topEntries(self, num=None, includeBoard=False, necrolab_lookup=False):
-        if not num:
-            num = self.board.entriesToPrivateReportOnRankDiff()
+    @abc.abstractmethod
+    def impossible_score(self, data):
+        pass
+
+    def top_entries(self, num=None):
+        if num is None:
+            num = options["public_report_rank_diff"]
         num = min(num, len(self.data))
         res = []
-        for i in range(num):
-            if necrolab_lookup:
-                pass
-            res.append((self, self.data[i]))
+        for data in self.data:
+            if not self.impossible_score(data):
+                data["rank"] = self.real_rank(data["rank"])
+                res.append(
+                    nsb_entry.Entry(data, board=self, template=self.get_template(data))
+                )
+            if len(res) == num:
+                break
         return res
 
-    def checkForDeleted(self, num):
+    def check_for_deleted(self, num):
         deleted = 0
         # num = 150
         # print(len(self.history))
@@ -75,90 +89,81 @@ class leaderboard:
                 deleted += 1
         return deleted
 
-    # def diffingEntries(self, num=1,
-    #        includeBoard = False,
-    def diffingEntries(
-        self, num=None, twitter=None, includeBoard=False, necrolab_lookup=False
-    ):
-        if self.data is None:
-            raise Exception("No data")
-        if self.history is None:
-            raise Exception("No history")
+    def get_template(self, curr, hist=None):
+        if hist is None:
+            return options[f"{self.mode}_message_new_entry"]
+        if curr.rank == hist.rank:
+            return options[f"{self.mode}_message_same_rank"]
+        return options[f"{self.mode}_message_new_rank"]
+
+    def diffing_entries(self, num=None):
+        assert self.data is not None
+        assert self.history is not None
 
         if not self.data:
             return []
 
         result = []
 
-        rankMax = max(
-            self.board.entriesToReportOnRankDiff(),
-            self.board.entriesToPrivateReportOnRankDiff(),
-        )
-
         if num is None:
-            num = rankMax
+            num = max(
+                options["private_report_rank_diff"],
+                options["private_report_points_diff"],
+                options["public_report_rank_diff"],
+                options["public_report_points_diff"],
+            )
 
         num = min(num, len(self.data))
         if num == 0:
             return []
 
-        if "steam_id" in self.data[0]:
-            key = "steam_id"
-        else:
-            key = "name"
+        # Save all players according to unique key for fast lookup
+        curr_entries = {e[self.key]: e for e in self.data[:num]}
 
-        for person in self.data[:num]:
-            found = False
-            include = False
+        for hist in self.history[: max(len(self.data) // 2, num + 50)]:
+            if not curr_entries:
+                break
 
-            for hist in self.history[: num + 10]:  # TODO: 10?
-                # for hist in self.history:
-                if person[key] == hist[key]:
-                    found = True
+            curr_entry = curr_entries.pop(hist[self.key], None)
 
-                    if self.board.report(person, hist, twitter=twitter):
-                        # if person['points'] > hist['points']:
-                        person["histRank"] = hist["rank"]
-                        person["histPoints"] = hist["points"]
-                        include = True
-                    break
+            if curr_entry is None:
+                continue
 
-            if not found or include:
-                if includeBoard:
-                    result.append((self, person))
-                else:
-                    result.append(person)
+            # If the person haven't improved points, don't include
+            if float(hist["points"]) >= curr_entry["points"]:
+                continue
+
+            hist["rank"] = self.real_rank(hist["rank"])
+            curr_entry["rank"] = self.real_rank(curr_entry["rank"])
+
+            template = self.get_template(curr_entry, hist)
+
+            entry = nsb_entry.Entry(
+                board=self, data=curr_entry, hist_data=hist, template=template
+            )
+            if not entry.report():
+                continue
+            result.append(entry)
+
+        # TODO: this is the dangerous loop, and will often also include only cheaters
+        # and garbage records. Maybe special-case for small boards only?
+        for curr_entry in curr_entries:
+            curr_entry["rank"] = self.real_rank(curr_entry["rank"])
+            template = self.get_template(curr_entry)
+            entry = nsb_entry.Entry(board=self, data=curr_entry, template=template)
+            if not entry.report():
+                continue
+            result.append(entry)
 
         return result
 
-    def realRank(self, rank):
+    def real_rank(self, rank):
         subtract = 0
         for i in self.data[: rank - 1]:
-            if self.impossiblePoints(i) or nsb_steam.known_cheater(i["steam_id"]):
+            if self.impossible_score(i) or nsb_steam.known_cheater(i["steam_id"]):
                 # print(i)
                 subtract += 1
         return rank - subtract
-
-    def __str__(self):
-        return str(self.board)
-
-    def __info__(self):
-        return str(self.board)
-
-    def __repr__(self):
-        # print(self.orig_name)
-        # return repr(self.info())
-        return str(self.board)
-
-    def formatPoints(self, person):
-        strPoints = self.board.formatPoints(person["points"])
-        if "histPoints" in person:
-            strPoints += self.board.relativePoints(
-                person["points"], person["histPoints"]
-            )
-        if self.board.unit():
-            strPoints += " " + self.board.unit()
-        return strPoints
 
     # def includePublic(self, entry):
     #    rank = int(entry['rank'])
@@ -185,11 +190,6 @@ class leaderboard:
     #            return True
     #    return False
 
-    def getTwitterHandle(self, person, twitter):
-        return self.board.getTwitterHandle(person, twitter)
-
-    def impossiblePoints(self, person):
-        return self.board.impossiblePoints(person)
-
-    def getUrl(self, person=None):
-        return self.board.getUrl(person)
+    @abc.abstractmethod
+    def pretty_url(self, person=None):
+        pass
