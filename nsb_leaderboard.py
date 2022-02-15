@@ -13,21 +13,21 @@ class leaderboard:
         self.data = None
         self.history = None
 
-        self.path = os.path.join(options['data'], 'boards', board._name + '.pickle')
+        self.path = os.path.join(options["data"], "boards", board._name + ".pickle")
 
     def hasFile(self):
         return self.path is not None and os.path.isfile(self.path)
 
     def read(self):
-        with open(self.path, 'rb') as f:
+        with open(self.path, "rb") as f:
             # The protocol version used is detected automatically, so we do not
             # have to specify it.
             self.history = pickle.load(f)
 
     def write(self):
         if self.data is None:
-            raise Exception('Trying to pickle with no data read')
-        with open(self.path, 'wb') as f:
+            raise Exception("Trying to pickle with no data read")
+        with open(self.path, "wb") as f:
             # Pickle the 'data' dictionary using the highest protocol available.
             pickle.dump(self.data, f, pickle.HIGHEST_PROTOCOL)
 
@@ -57,8 +57,8 @@ class leaderboard:
             hist = self.history[i]
             found = False
             for person in self.data[: num + 20]:
-                if person['steam_id'] == int(hist['steam_id']):
-                    if int(person['points']) >= int(hist['points']):
+                if person["steam_id"] == int(hist["steam_id"]):
+                    if int(person["points"]) >= int(hist["points"]):
                         # print(self.history.index(hist), self.data.index(person))
                         found = True
                     else:
@@ -67,7 +67,7 @@ class leaderboard:
                             f"new: {person}\nold: {hist}"
                         )
                         raise Exception(
-                            'ERROR: Found deleted entry due to less points', person
+                            "ERROR: Found deleted entry due to less points", person
                         )
                     break
             if not found:
@@ -81,9 +81,9 @@ class leaderboard:
         self, num=None, twitter=None, includeBoard=False, necrolab_lookup=False
     ):
         if self.data is None:
-            raise Exception('No data')
+            raise Exception("No data")
         if self.history is None:
-            raise Exception('No history')
+            raise Exception("No history")
 
         if not self.data:
             return []
@@ -102,10 +102,10 @@ class leaderboard:
         if num == 0:
             return []
 
-        if 'steam_id' in self.data[0]:
-            key = 'steam_id'
+        if "steam_id" in self.data[0]:
+            key = "steam_id"
         else:
-            key = 'name'
+            key = "name"
 
         for person in self.data[:num]:
             found = False
@@ -118,8 +118,8 @@ class leaderboard:
 
                     if self.board.report(person, hist, twitter=twitter):
                         # if person['points'] > hist['points']:
-                        person['histRank'] = hist['rank']
-                        person['histPoints'] = hist['points']
+                        person["histRank"] = hist["rank"]
+                        person["histPoints"] = hist["points"]
                         include = True
                     break
 
@@ -134,7 +134,7 @@ class leaderboard:
     def realRank(self, rank):
         subtract = 0
         for i in self.data[: rank - 1]:
-            if self.impossiblePoints(i) or nsb_steam.known_cheater(i['steam_id']):
+            if self.impossiblePoints(i) or nsb_steam.known_cheater(i["steam_id"]):
                 # print(i)
                 subtract += 1
         return rank - subtract
@@ -151,13 +151,13 @@ class leaderboard:
         return str(self.board)
 
     def formatPoints(self, person):
-        strPoints = self.board.formatPoints(person['points'])
-        if 'histPoints' in person:
+        strPoints = self.board.formatPoints(person["points"])
+        if "histPoints" in person:
             strPoints += self.board.relativePoints(
-                person['points'], person['histPoints']
+                person["points"], person["histPoints"]
             )
         if self.board.unit():
-            strPoints += ' ' + self.board.unit()
+            strPoints += " " + self.board.unit()
         return strPoints
 
     # def includePublic(self, entry):

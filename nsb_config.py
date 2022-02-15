@@ -161,6 +161,7 @@ options.parse_known_args()
 options.add_parameter(
     "--data-dir",
     help="specify data directory",
+    dest="data",
     metavar="DIRECTORY",
     action=_CreateDirectory,
     default=evaluate_path("$XDG_DATA_HOME/necro_score_bot/"),

@@ -31,16 +31,16 @@ def fetchUrl(url, path=None):
 
 def boardUrl(lbid, start, end):
     return (
-        f'http://steamcommunity.com/stats/247080/leaderboards/'
-        f'{lbid}/?xml=1&start={start}&end={end}'
+        f"http://steamcommunity.com/stats/247080/leaderboards/"
+        f"{lbid}/?xml=1&start={start}&end={end}"
     )
 
 
 def leaderboardUrl():
-    return 'http://steamcommunity.com/stats/247080/leaderboards/?xml=1'
+    return "http://steamcommunity.com/stats/247080/leaderboards/?xml=1"
 
 
-def decodeResponse(response, re_codec='utf-8'):
+def decodeResponse(response, re_codec="utf-8"):
     data = response.read()
     text = data.decode(re_codec)
     return text
@@ -48,12 +48,12 @@ def decodeResponse(response, re_codec='utf-8'):
 
 def fetchJson(url):
     response = fetchUrl(url)
-    reader = codecs.getreader('utf-8')
+    reader = codecs.getreader("utf-8")
     return json.load(reader(response))
 
 
 def downloadIndex(path):
-    boardFile = path + 'leaderboards.xml'
+    boardFile = path + "leaderboards.xml"
     # fetchUrl(leaderboardsurl, boardFile)
     fetchUrl(leaderboardUrl(), boardFile)
 
@@ -64,23 +64,23 @@ def fetch_steamname(steam_id):
         f"?key={options['steam_key']}&steamids={steam_id}"
     )
     obj = fetchJson(url)
-    return obj['response']['players'][0]['personaname']
+    return obj["response"]["players"][0]["personaname"]
 
 
 def getTwitterHandle(steam_id):
-    url = f'http://steamcommunity.com/profiles/{steam_id}'
-    text = decodeResponse(fetchUrl(url), 'latin-1')
+    url = f"http://steamcommunity.com/profiles/{steam_id}"
+    text = decodeResponse(fetchUrl(url), "latin-1")
 
     match = re.search(r"twitter\.com\\/(?P<handle>\w+)\\\"", text)
     if match is None:
         return match
 
-    handle = match.group('handle')
+    handle = match.group("handle")
 
     if not twitter:
-        print('Warning: unverified handle')
+        print("Warning: unverified handle")
         return handle
-    if twitter.checkTwitterHandle(handle):
+    if twitter.check_twitter_handle(handle):
         return handle
 
     print(f"{handle} in steam profile but not valid")
@@ -88,11 +88,11 @@ def getTwitterHandle(steam_id):
 
 
 def known_cheater(steam_id):
-    file = 'known_cheaters.txt'
+    file = "known_cheaters.txt"
     if not os.path.isfile(file):
-        file = os.path.dirname(os.path.realpath(__file__)) + '/' + file
+        file = os.path.dirname(os.path.realpath(__file__)) + "/" + file
 
-    with open(file, 'r', encoding='utf-8') as f:
+    with open(file, "r", encoding="utf-8") as f:
         for line in f:
             if int(line) == steam_id:
                 return True

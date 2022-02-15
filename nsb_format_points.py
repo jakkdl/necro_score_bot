@@ -1,11 +1,11 @@
 def nth(i):
     if i % 10 == 1 and i % 100 != 11:
-        return 'st'
+        return "st"
     if i % 10 == 2 and i % 100 != 12:
-        return 'nd'
+        return "nd"
     if i % 10 == 3 and i % 100 != 13:
-        return 'rd'
-    return 'th'
+        return "rd"
+    return "th"
 
 
 def scoreToProgress(score):
@@ -37,39 +37,39 @@ def formatTime(milliseconds):
     seconds, milliseconds = divmod(milliseconds, 1000)
     milliseconds = round(milliseconds / 10.0)  # Change precision from 3 to 2
 
-    result = ''
+    result = ""
 
     if hours:
-        result += f'{hours}:{minutes:02}:'
+        result += f"{hours}:{minutes:02}:"
     elif minutes:
-        result += f'{minutes}:'
+        result += f"{minutes}:"
 
-    result += f'{seconds:02}.{milliseconds:02}'
+    result += f"{seconds:02}.{milliseconds:02}"
 
     return result
 
 
 def relativeProgress(newScore, prevScore):
     if prevScore in (-1, newScore):
-        return ''
+        return ""
     wins, zone, level = scoreToProgress(prevScore)
-    return f' (up from {wins}-{zone}-{level})'
+    return f" (up from {wins}-{zone}-{level})"
 
 
 def relativeTime(new, prev):
     """newTime and prevTime should be given in milliseconds"""
     if prev in (-1, new):
-        return ''
-    return f' (-{formatTime(prev - new)}) '
+        return ""
+    return f" (-{formatTime(prev - new)}) "
 
 
 def relativeRank(new, prev):
     if prev in (-1, new):
-        return ''
-    return f' ({prev-new:+}) '
+        return ""
+    return f" ({prev-new:+}) "
 
 
 def relativeScore(new, prev):
     if prev in (-1, new):
-        return ''
-    return f' (+{prev-new}) '
+        return ""
+    return f" (+{prev-new}) "
