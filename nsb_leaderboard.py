@@ -38,8 +38,8 @@ class Leaderboard:
     @abc.abstractmethod
     def fetch(self):
         pass
-        # url = nsb_steam.boardUrl(self.lbid, 1, 100)
-        # response = nsb_steam.fetchUrl(self._url)
+        # url = nsb_steam.board_url(self.lbid, 1, 100)
+        # response = nsb_steam.fetch_url(self._url)
         # self.data = self.board.parseResponse(response)
 
     @abc.abstractmethod
@@ -183,7 +183,7 @@ class Leaderboard:
     #    ):
     #        if 'twitter_username' in entry and entry['twitter_username']:
     #            return True
-    #        twitterHandle = nsb_steam.getTwitterHandle(entry['steam_id'], twitter)
+    #        twitterHandle = nsb_steam.get_twitter_handle(entry['steam_id'], twitter)
     #        if twitterHandle:
     #            # print('handle:', twitterHandle)
     #            entry['twitter_username'] = twitterHandle

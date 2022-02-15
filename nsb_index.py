@@ -10,9 +10,9 @@ class Index:
         self.data = None
 
     def fetch(self):
-        url = nsb_steam.leaderboardUrl()
-        response = nsb_steam.fetchUrl(url)
-        self.data = nsb_database.xml_to_list(response=response, responseType="index")
+        url = nsb_steam.leaderboard_url()
+        response = nsb_steam.fetch_url(url)
+        self.data = nsb_database.xml_to_list(response=response, response_type="index")
 
     def read_pickle(self):
         with open(self.path, "rb") as file:
@@ -21,7 +21,7 @@ class Index:
             self.data = pickle.load(file)
 
     def read_xml(self):
-        self.data = nsb_database.xml_to_list(self.path, responseType="index")
+        self.data = nsb_database.xml_to_list(self.path, response_type="index")
 
     def write(self):
         with open(self.path, "wb") as file:

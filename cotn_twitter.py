@@ -52,7 +52,7 @@ def update_threaded(index, num) -> typing.List[nsb_entry.Entry]:
             try:
                 data = future.result()
             except Exception as exc:
-                print(f"{entry} generated an exception: {exc}")
+                print(f"{index_entry} generated an exception: {exc}")
             else:
                 for entry in data:
                     if options["debug"]:
@@ -225,7 +225,7 @@ def compose_tweet(data, linked_data):
     # if 'twitter_username' in entry:
     #    twitterHandle = entry['twitter_username']
     # else:
-    #    twitterHandle = board.getTwitterHandle(entry, twitter)
+    #    twitterHandle = board.get_twitter_handle(entry, twitter)
 
     # if twitterHandle:
     #    name = '@' + twitterHandle
@@ -284,7 +284,7 @@ def compose_tweet(data, linked_data):
 #    namescore_list = []
 #
 #    for person in persons:
-#        twitterHandle = nsb_steam.getTwitterHandle(person['steam_id'], twitter)
+#        twitterHandle = nsb_steam.get_twitter_handle(person['steam_id'], twitter)
 #
 #        if twitterHandle:
 #            name = '@' + twitterHandle

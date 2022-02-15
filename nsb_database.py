@@ -26,30 +26,30 @@ def convert_if_possible(data):
     return data
 
 
-def xml_to_list(response, responseType):
-    text = nsb_steam.decodeResponse(response)
+def xml_to_list(response, response_type):
+    text = nsb_steam.decode_response(response)
     data = ET.fromstring(text)
-    return xml_to_list_internal(data, responseType)
+    return xml_to_list_internal(data, response_type)
 
 
-def xml_to_list_file(path, responseType):
+def xml_to_list_file(path, response_type):
     tree = ET.parse(path)
     root = tree.getroot()
-    return xml_to_list_internal(root, responseType)
+    return xml_to_list_internal(root, response_type)
 
 
-def xml_to_list_internal(xml_data, responseType):
+def xml_to_list_internal(xml_data, response_type):
     result = []
-    if responseType == "leaderboard":
+    if response_type == "leaderboard":
         index = entry_index(xml_data)
         entries = xml_data[index]
-    elif responseType == "index":
+    elif response_type == "index":
         entries = xml_data[3:]
     else:
-        raise Exception("Unknown responseType")
+        raise Exception("Unknown response_type")
 
     for entry in entries:
-        dictEntry = {}
+        dict_entry = {}
 
         for data in entry:
             tag = data.tag
@@ -57,8 +57,8 @@ def xml_to_list_internal(xml_data, responseType):
                 tag = "points"
             elif tag == "steamid":
                 tag = "steam_id"
-            dictEntry[tag] = convert_if_possible(data.text)
+            dict_entry[tag] = convert_if_possible(data.text)
 
-        result.append(dictEntry)
+        result.append(dict_entry)
 
     return result

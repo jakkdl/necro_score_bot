@@ -47,9 +47,12 @@ names = [
     "mary",
 ]
 
-toofz_character_diffs = {"all char": "all-characters",
-        "all chars dlc": "all-characters-amplified",
-        "story mode": "story-mode"}
+toofz_character_diffs = {
+    "all char": "all-characters",
+    "all chars dlc": "all-characters-amplified",
+    "story mode": "story-mode",
+}
+
 
 class SteamBoard(nsb_leaderboard.Leaderboard):
     def __init__(self, index_entry):
@@ -69,8 +72,8 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
         # self._extra = _check_extra_modes(name)
 
     def fetch(self):
-        # url = nsb_steam.boardUrl(self.lbid, 1, 100)
-        response = nsb_steam.fetchUrl(self._url)
+        # url = nsb_steam.board_url(self.lbid, 1, 100)
+        response = nsb_steam.fetch_url(self._url)
         self.data = nsb_database.xml_to_list(response, "leaderboard")
 
     def __str__(self):
@@ -121,7 +124,7 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
         split = split.split("/")
         return datetime.date(int(split[2]), int(split[1]), int(split[0]))
 
-    #def maxLeaderboardEntries(self):
+    # def maxLeaderboardEntries(self):
     #    # if self._custom_music:
     #    # return 1
     #    if "coop" in self.name:
@@ -134,11 +137,8 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
     #        return 3
     #    return None
 
-    #def maxCompareEntries(self):
+    # def maxCompareEntries(self):
     #    return 100
-
-
-
 
     def impossible_score(self, data):
         return self.mode == "score" and data["points"] > options["impossible_score"]
@@ -153,6 +153,7 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
                 print("toofz doesnt support >1 extra modes")
                 return False
             return True
+
         def toofz_url():
             base = "https://crypt.toofz.com/leaderboards/"
             if "dlc" in self.name:
@@ -172,6 +173,7 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
             if self._extra_modes():
                 mode += "/" + self._extra_modes()[0].replace(" ", "-")
             return f"{base}{char}{mode}"
+
         if not toofz_support():
             return ""
 

@@ -36,7 +36,7 @@ class Entry:
 
     def necrolab_player(self):
         url = f"https://api.necrolab.com/players/player?steamid={self.steam_id}"
-        obj = nsb_steam.fetchJson(url)
+        obj = nsb_steam.fetch_json(url)
 
         return obj["data"]["linked"]
 

@@ -10,7 +10,7 @@ from nsb_config import options
 from nsb_twitter import twitter
 
 
-def fetchUrl(url, path=None):
+def fetch_url(url, path=None):
     tries = 3
     while True:
         try:
@@ -29,33 +29,33 @@ def fetchUrl(url, path=None):
             time.sleep(5)
 
 
-def boardUrl(lbid, start, end):
+def board_url(lbid, start, end):
     return (
         f"http://steamcommunity.com/stats/247080/leaderboards/"
         f"{lbid}/?xml=1&start={start}&end={end}"
     )
 
 
-def leaderboardUrl():
+def leaderboard_url():
     return "http://steamcommunity.com/stats/247080/leaderboards/?xml=1"
 
 
-def decodeResponse(response, re_codec="utf-8"):
+def decode_response(response, re_codec="utf-8"):
     data = response.read()
     text = data.decode(re_codec)
     return text
 
 
-def fetchJson(url):
-    response = fetchUrl(url)
+def fetch_json(url):
+    response = fetch_url(url)
     reader = codecs.getreader("utf-8")
     return json.load(reader(response))
 
 
-def downloadIndex(path):
-    boardFile = path + "leaderboards.xml"
-    # fetchUrl(leaderboardsurl, boardFile)
-    fetchUrl(leaderboardUrl(), boardFile)
+def download_index(path):
+    board_file = path + "leaderboards.xml"
+    # fetch_url(leaderboardsurl, board_file)
+    fetch_url(leaderboard_url(), board_file)
 
 
 def fetch_steamname(steam_id):
@@ -63,13 +63,13 @@ def fetch_steamname(steam_id):
         f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
         f"?key={options['steam_key']}&steamids={steam_id}"
     )
-    obj = fetchJson(url)
+    obj = fetch_json(url)
     return obj["response"]["players"][0]["personaname"]
 
 
-def getTwitterHandle(steam_id):
+def get_twitter_handle(steam_id):
     url = f"http://steamcommunity.com/profiles/{steam_id}"
-    text = decodeResponse(fetchUrl(url), "latin-1")
+    text = decode_response(fetch_url(url), "latin-1")
 
     match = re.search(r"twitter\.com\\/(?P<handle>\w+)\\\"", text)
     if match is None:
@@ -92,8 +92,8 @@ def known_cheater(steam_id):
     if not os.path.isfile(file):
         file = os.path.dirname(os.path.realpath(__file__)) + "/" + file
 
-    with open(file, "r", encoding="utf-8") as f:
-        for line in f:
+    with open(file, "r", encoding="utf-8") as file:
+        for line in file:
             if int(line) == steam_id:
                 return True
     return False
