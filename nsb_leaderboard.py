@@ -14,7 +14,7 @@ from nsb_config import options
 class BoardEntry:
     points: int
     rank: int
-    steamid: str
+    steam_id: str
 
     def __init__(self, data: dict[str, str]):
         self.points = int(data["points"])
@@ -221,5 +221,5 @@ class Leaderboard:
     #    return False
 
     @abc.abstractmethod
-    def pretty_url(self, person: Optional[dict[str, str]] = None) -> str:
+    def pretty_url(self, person: Optional[nsb_entry.Entry] = None) -> str:
         pass

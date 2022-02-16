@@ -1,9 +1,9 @@
-from typing import Callable, cast
+from typing import Callable, cast, Optional
 import nsb_leaderboard
 import nsb_entry
 
 format_dict: dict[str, Callable[[nsb_entry.Entry], str]] = {
-    "$NAME$": str,
+    # "$NAME$": str,
     "$RANK$": lambda e: str(e.score.rank),
     "$RANKTH$": lambda e: _nth(e.score.rank),
     "$BOARD$": lambda e: str(e.board),
@@ -23,11 +23,17 @@ format_dict: dict[str, Callable[[nsb_entry.Entry], str]] = {
     "$DELTASCORE$": lambda e: str(
         cast(nsb_leaderboard.BoardEntry, e.prev_score).points - e.score.points
     ),
+    "$TOOFZURL": lambda e: e.pretty_url(),
 }
 
 
-def format_message(entry: nsb_entry.Entry) -> str:
+def format_message(entry: nsb_entry.Entry, name: Optional[str] = None) -> str:
     template = entry.template
+
+    if not name:
+        name = str(entry)
+    template = template.replace("$NAME$", name)
+
     for key, func in format_dict.items():
         if key not in template:
             continue

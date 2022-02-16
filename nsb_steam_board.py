@@ -4,6 +4,7 @@ from typing import Optional
 import nsb_database
 import nsb_steam
 import nsb_leaderboard
+import nsb_entry
 
 from nsb_config import options
 
@@ -143,7 +144,7 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
     def impossible_score(self, data: dict[str, str]) -> bool:
         return self.mode == "score" and data["points"] > options["impossible_score"]
 
-    def pretty_url(self, person: Optional[dict[str, str]] = None) -> str:
+    def pretty_url(self, person: Optional[nsb_entry.Entry] = None) -> str:
         def toofz_support() -> bool:
             if "coop" in self.name or "custom_music" in self.name:
                 return False
@@ -156,23 +157,26 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
 
         def toofz_url() -> str:
             base = "https://crypt.toofz.com/leaderboards/"
+            dlc = ""
             if "dlc" in self.name:
-                base += "amplified/"
+                dlc = "amplified/"
 
             if self.mode == "daily":
-                # return base + 'Daily/' + self._date.strftime('%Y/%m/%d/')
-                return base + "daily?date=" + self._date().strftime("%Y-%m-%d")
+                return f"{base}{dlc}daily?date={self._date().strftime('%Y-%m-%d')}"
             # https://crypt.toofz.com/leaderboards/daily?date=2015-05-27
+
+            seeded = ""
+            extra_modes = ""
 
             char = self._character()
             char = toofz_character_diffs.get(char, char)
 
-            mode: str = self.mode
             if "seeded" in self.name:
-                mode = "seeded-" + mode
+                seeded = "seeded-"
             if self._extra_modes():
-                mode += "/" + self._extra_modes()[0].replace(" ", "-")
-            return f"{base}{char}{mode}"
+                extra_modes = "/" + self._extra_modes()[0].replace(" ", "-")
+
+            return f"{base}{dlc}{char}{seeded}{self.mode}{extra_modes}"
 
         if not toofz_support():
             return ""
@@ -183,4 +187,4 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
 
         if self.mode == "daily":
             return url
-        return url + "?id=" + str(person["steam_id"])
+        return f"{url}?id={person.steam_id}"

@@ -53,8 +53,16 @@ class Entry:
         if "steam_name" not in handles and options["steam_key"]:
             handles["steam_name"] = nsb_steam.fetch_steamname(self.steam_id)
 
+        if "twitter_handle" not in handles and options["steam_key"]:
+            twitter_handle = nsb_steam.get_twitter_handle(self.steam_id)
+            if twitter_handle:
+                handles["twitter_handle"] = twitter_handle
+
         # if discord
         return handles
+
+    def pretty_url(self) -> str:
+        return self.board.pretty_url(self)
 
     def report(self) -> bool:
         # Check for public report

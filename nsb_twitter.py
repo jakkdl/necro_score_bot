@@ -39,7 +39,7 @@ class Twitter:
             return None
 
     def post_tweet(self, text: str) -> None:
-        if not self.agent:
+        if not self.agent or not options["tweet"]:
             print(f"Tweet: {text}")
             return
         self.agent.statuses.update(status=text)

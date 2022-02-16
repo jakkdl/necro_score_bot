@@ -33,12 +33,6 @@ def xml_to_list(response: Any, response_type: str) -> list[dict[str, str]]:
     return xml_to_list_internal(data, response_type)
 
 
-def xml_to_list_file(path: str, response_type: str) -> list[dict[str, str]]:
-    tree = ET.parse(path)
-    root = tree.getroot()
-    return xml_to_list_internal(root, response_type)
-
-
 def xml_to_list_internal(
     xml_data: ET.Element, response_type: str
 ) -> list[dict[str, str]]:

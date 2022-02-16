@@ -4,16 +4,16 @@ cotn_twitter.update()"""
 import asyncio
 import importlib
 
-import discord as discord_api
+import discord
 
-import nsb_format_points
 import cotn_twitter
+from nsb_config import options
 
 
 PYTHONASYNCIODEBUG = 1
 
 
-class DiscordBot(discord_api.Client):
+class DiscordBot(discord.Client):
     """Discord necro_score_bot."""
 
     def __init__(self) -> None:
@@ -27,14 +27,8 @@ class DiscordBot(discord_api.Client):
     async def update_boards(self) -> None:
         """Fetch all boards and post to twitter (if twitter != None)
         and post to discord"""
-        for entry in cotn_twitter.update():
-            msg = nsb_format_points.format_message(entry)
-            disc_id = entry.linked_accounts.get("discord_id", None)
-
-            if disc_id:
-                await self.post(f"<@{disc_id}>{msg}")
-            else:
-                await self.post(f"{str(entry)}{msg}")
+        for msg in cotn_twitter.update():
+            await self.post(msg)
 
     async def background_task(self) -> None:
         """Runs in the background and calls update_boards every 5 minutes."""
@@ -52,7 +46,7 @@ class DiscordBot(discord_api.Client):
         print(f"logged in as {self.user.name}")
         # await self.post('online')
 
-    async def on_message(self, message: discord_api.Message) -> None:
+    async def on_message(self, message: discord.Message) -> None:
         """Handle incoming messages,
         supports !scorebot update and !scorebot reload."""
 
@@ -78,6 +72,10 @@ class DiscordBot(discord_api.Client):
 
     async def post(self, text: str, channel_id: int = 296636142210646016) -> None:
         """Posts text to channel channel_id."""
+        if not options["post_discord"]:
+            print(f"Discord post: {text}")
+            return
+
         channel = self.get_channel(channel_id)
-        assert isinstance(channel, discord_api.TextChannel)
+        assert isinstance(channel, discord.TextChannel)
         await channel.send(text)

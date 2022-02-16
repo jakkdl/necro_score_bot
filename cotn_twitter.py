@@ -1,8 +1,6 @@
 import time
-
-# import math
 import concurrent.futures
-from typing import Optional
+from typing import Optional, Iterable
 
 import nsb_leaderboard
 import nsb_steam_board
@@ -10,6 +8,7 @@ import nsb_index
 import nsb_entry
 import nsb_format_points
 
+from nsb_twitter import twitter
 from nsb_config import options
 
 
@@ -77,7 +76,7 @@ def update_nonthreaded(index: nsb_index.Index, num: int) -> list[nsb_entry.Entry
     return res
 
 
-def update(num_discord: int = 50, num_twitter: int = 5) -> list[nsb_entry.Entry]:
+def update(num_discord: int = 50, num_twitter: int = 5) -> Iterable[str]:
     print("start at: ", time.strftime("%c"))
 
     index = nsb_index.Index()
@@ -88,62 +87,32 @@ def update(num_discord: int = 50, num_twitter: int = 5) -> list[nsb_entry.Entry]
     else:
         res = update_nonthreaded(index, num)
 
-    discord_messages: list[nsb_entry.Entry] = []
     for entry in res:
         print(entry)
-        # tweet if linked_twitter, or rank < public_tweet_limit
-        # t = compose_tweet(data, linked_data)
-        # twitter.postTweet(t)
-        # discord message if linked_discord or rank < public_discord_limit
-        # yield
-        # discord_messages.append((compose_message(data[1], data[0]), linked_data))
+        twitter_handle = entry.linked_accounts.get("twitter_handle", None)
+        name = ""
+        if twitter_handle:
+            if entry.score.rank < 3:
+                name = f".@{twitter_handle}"
+            else:
+                name = f"@{twitter_handle}"
+        elif entry.score.rank < 3:
+            name = str(entry)
+
+        if name:
+            twitter.post_tweet(nsb_format_points.format_message(entry, name))
+
+        discord_id = entry.linked_accounts.get("discord_id", None)
+
+        name = ""
+        if discord_id:
+            name = f"<@{discord_id}>"
+        elif entry.score.rank < 3:
+            name = str(entry)
+        if name:
+            yield nsb_format_points.format_message(entry, name)
 
     print("finished at: ", time.strftime("%c"))
-    return discord_messages
-
-
-# =======
-#    for index_entry in index.entries():
-#        steam_board = nsb_steam_board.SteamBoard(index_entry)
-#        board = nsb_leaderboard.Leaderboard(steam_board)
-#
-#        if not steam_board.include():
-#            print('skipping: ', index_entry)
-#        else:
-#            if options['debug']:
-#                print("including: ", str(board))
-#
-#            if not board.has_file() and not options['handle-new']:
-#                print('New leaderboard', str(board), 'use --handle-new to use')
-#                continue
-#
-#            board.fetch()
-#            if options['churn']:
-#                if options['backup']:
-#                    board.write()
-#
-#            if not board.has_file():
-#                entries = board.top_entries(5)
-#            else:
-#                board.read()
-#                try:
-#                    deleted_entries = board.check_for_deleted(90)
-#                except:
-#                    print('check_for_deleted threw exception, skipping')
-#                    # we probably have an older leaderboard
-#                    continue
-#                if deleted_entries > 0:
-#                    print(f'Found {deleted_entries} deleted entries in {str(board)}')
-#                    if deleted_entries >= len(board.history):
-#                        raise Exception(
-#                            f'ERROR: {deleted_entries} {board} all entries deleted'
-#                        )
-#                    if deleted_entries >= 30:
-#                        raise Exception(
-#                            f'ERROR: {deleted_entries} too many deleted entries'
-#                        )
-#                entries = board.diffing_entries(twitter=twitter)
-# >>>>>>> master
 
 
 # def discord_include(entry, board):
@@ -213,36 +182,6 @@ def update_board(
     return entries
 
 
-# def compose_tweet(data, linked_data):
-#    msg = compose_message(data[1], data[0], url=True)
-#    handle = linked_data["twitter"]["nickname"]
-#    if handle:
-#        if data[1]["rank"] <= 5:
-#            return f".@{handle}{msg}"
-#
-#        return f"@{handle}{msg}"
-#
-#    return f"{linked_data['steam']['personaname']} {msg}"
-
-# tag = ' #necrodancer'
-
-## TODO: yo this shit is unreadable
-# if 'twitter_username' in entry:
-#    twitterHandle = entry['twitter_username']
-# else:
-#    twitterHandle = board.get_twitter_handle(entry, twitter)
-
-# if twitterHandle:
-#    name = '@' + twitterHandle
-#    if board.includePublic(entry):
-#        name = '.' + name
-# elif 'name' in entry:
-#    name = entry['name']
-# elif options['steam_key']:
-#    name = nsb_steam.steamname(int(entry['steam_id']), options['steam_key'])
-# else:
-#    name = str(entry['steam_id'])
-
 # if 'steam_id' in entry:
 #    community_manager = '@NecroDancerGame'
 #    if nsb_steam.known_cheater(entry['steam_id']):
@@ -260,28 +199,6 @@ def update_board(
 
 #   elif length > 140:
 #       full = full[:140]
-
-
-#    full = (
-#        name
-#        + inter1
-#        + str(board.realRank(rank))
-#        + inter2
-#        + str(board)
-#        + inter3
-#        + strPoints
-#    )
-#
-#    length = len(full)
-#    if length + 24 < 140:
-#        full += ' ' + url
-#        if length + 24 + len(tag) < 140:
-#            full += tag
-#
-#    elif length > 140:
-#        full = full[:140]
-#
-#    return full
 
 
 # def composeDailyMessage(persons, board, twitter):

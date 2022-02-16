@@ -30,11 +30,11 @@ def fetch_url(url: str, path: Optional[str] = None) -> Any:
             time.sleep(5)
 
 
-def board_url(lbid: int, start: int, end: int) -> str:
-    return (
-        f"http://steamcommunity.com/stats/247080/leaderboards/"
-        f"{lbid}/?xml=1&start={start}&end={end}"
-    )
+# def board_url(lbid: int, start: int, end: int) -> str:
+#    return (
+#        f"http://steamcommunity.com/stats/247080/leaderboards/"
+#        f"{lbid}/?xml=1&start={start}&end={end}"
+#    )
 
 
 def leaderboard_url() -> str:
@@ -53,10 +53,10 @@ def fetch_json(url: str) -> Any:
     return json.load(reader(response))
 
 
-def download_index(path: str) -> None:
-    board_file = path + "leaderboards.xml"
-    # fetch_url(leaderboardsurl, board_file)
-    fetch_url(leaderboard_url(), board_file)
+# def download_index(path: str) -> None:
+#    board_file = path + "leaderboards.xml"
+#    # fetch_url(leaderboardsurl, board_file)
+#    fetch_url(leaderboard_url(), board_file)
 
 
 def fetch_steamname(steam_id: str) -> str:

@@ -221,6 +221,9 @@ options.add_argument(
 )
 
 options.add_argument("--tweet", help="enable tweeting", action=_Bool, default=False)
+options.add_argument(
+    "--post-discord", help="enable posting to discord", action=_Bool, default=False
+)
 
 options.add_argument(
     "--backup",
@@ -281,47 +284,47 @@ options.add_argument(
 options.add_argument(
     "--deathless-message-new-entry",
     type=str,
-    default="$NAME$ claims rank $RANK$ in $BOARD$ with $PROGRESS$",
+    default="$NAME$ claims rank $RANK$ in $BOARD$ with $PROGRESS$ $TOOFZURL$",
 )
 options.add_argument(
     "--deathless-message-new-rank",
     type=str,
-    default="$NAME$ claims rank $RANK$ (+$DELTARANK$) in $BOARD$ with $PROGRESS$ ($DELTAPROGRESS$)",
+    default="$NAME$ claims rank $RANK$ (+$DELTARANK$) in $BOARD$ with $PROGRESS$ ($DELTAPROGRESS$) $TOOFZURL$",
 )
 options.add_argument(
     "--deathless-message-same-rank",
     type=str,
-    default="$NAME$, $RANKTH$ in $BOARD$ improves streak to $PROGRESS$ ($DELTAPROGRESS$)",
+    default="$NAME$, $RANKTH$ in $BOARD$ improves streak to $PROGRESS$ ($DELTAPROGRESS$) $TOOFZURL$",
 )
 options.add_argument(
     "--speedrun-message-new-entry",
     type=str,
-    default="$NAME$ claims rank $RANK$ in $BOARD$ with $TIME$",
+    default="$NAME$ claims rank $RANK$ in $BOARD$ with $TIME$ $TOOFZURL$",
 )
 options.add_argument(
     "--speedrun-message-new-rank",
     type=str,
-    default="$NAME$ claims rank $RANK$ (+$DELTARANK$) in $BOARD$ with $TIME$ ($DELTATIME$)",
+    default="$NAME$ claims rank $RANK$ (+$DELTARANK$) in $BOARD$ with $TIME$ ($DELTATIME$) $TOOFZURL$",
 )
 options.add_argument(
     "--speedrun-message-same-rank",
     type=str,
-    default="$NAME$, $RANKTH$ in $BOARD$ improves time to $TIME$ ($DELTATIME$)",
+    default="$NAME$, $RANKTH$ in $BOARD$ improves time to $TIME$ ($DELTATIME$) $TOOFZURL$",
 )
 options.add_argument(
     "--score-message-new-entry",
     type=str,
-    default="$NAME$ claims rank $RANK$ in $BOARD$ with $SCORE$ gold",
+    default="$NAME$ claims rank $RANK$ in $BOARD$ with $SCORE$ gold $TOOFZURL$",
 )
 options.add_argument(
     "--score-message-new-rank",
     type=str,
-    default="$NAME$ claims rank $RANK$ (+$DELTARANK$) in $BOARD$ with $SCORE$ ($DELTASCORE$) gold",
+    default="$NAME$ claims rank $RANK$ (+$DELTARANK$) in $BOARD$ with $SCORE$ ($DELTASCORE$) gold $TOOFZURL$",
 )
 options.add_argument(
     "--score-message-same-rank",
     type=str,
-    default="$NAME$, $RANKTH$ in $BOARD$ improves to $SCORE$ ($DELTASCORE$) gold",
+    default="$NAME$, $RANKTH$ in $BOARD$ improves to $SCORE$ ($DELTASCORE$) gold $TOOFZURL$",
 )
 
 
