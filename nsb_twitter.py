@@ -1,9 +1,10 @@
 import os.path
+from typing import Optional
 import twitter as twitter_api
 from nsb_config import options
 
 
-def _read_config(file_name):
+def _read_config(file_name: str) -> str:
     with open(
         os.path.join(options["twitter_keys"], file_name), encoding="utf-8"
     ) as file:
@@ -11,7 +12,7 @@ def _read_config(file_name):
 
 
 class Twitter:
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             consumer_key = _read_config("consumer_key")
             consumer_secret = _read_config("consumer_secret")
@@ -27,7 +28,7 @@ class Twitter:
                 )
             )
 
-    def check_twitter_handle(self, handle):
+    def check_twitter_handle(self, handle: str) -> Optional[str]:
         if not self.agent:
             return None
         try:
@@ -37,7 +38,7 @@ class Twitter:
             print(f"you should specify {exception} in this except.")
             return None
 
-    def post_tweet(self, text):
+    def post_tweet(self, text: str) -> None:
         if not self.agent:
             print(f"Tweet: {text}")
             return

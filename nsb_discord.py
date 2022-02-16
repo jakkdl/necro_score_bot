@@ -6,8 +6,8 @@ import importlib
 
 import discord as discord_api
 
+import nsb_format_points
 import cotn_twitter
-from nsb_twitter import twitter
 
 
 PYTHONASYNCIODEBUG = 1
@@ -16,26 +16,27 @@ PYTHONASYNCIODEBUG = 1
 class DiscordBot(discord_api.Client):
     """Discord necro_score_bot."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def run(self, *args, **kwargs):
+    def run(self, *args, **kwargs) -> None:  # type: ignore
         """Runs the discord bot."""
         self.loop.create_task(self.background_task())
         super().run(*args, **kwargs)
 
-    async def update_boards(self):
+    async def update_boards(self) -> None:
         """Fetch all boards and post to twitter (if twitter != None)
         and post to discord"""
-        for msg, linked_data in cotn_twitter.update(twitter):
-            disc_id = linked_data["discord"]["id"]
+        for entry in cotn_twitter.update():
+            msg = nsb_format_points.format_message(entry)
+            disc_id = entry.linked_accounts.get("discord_id", None)
 
             if disc_id:
                 await self.post(f"<@{disc_id}>{msg}")
             else:
-                await self.post(f"{linked_data['steam']['personaname']}{msg}")
+                await self.post(f"{str(entry)}{msg}")
 
-    async def background_task(self):
+    async def background_task(self) -> None:
         """Runs in the background and calls update_boards every 5 minutes."""
 
         await self.wait_until_ready()
@@ -46,17 +47,17 @@ class DiscordBot(discord_api.Client):
             await self.update_boards()
             await asyncio.sleep(300)
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         """Print login info when logged in."""
         print(f"logged in as {self.user.name}")
         # await self.post('online')
 
-    async def on_message(self, message):
+    async def on_message(self, message: discord_api.Message) -> None:
         """Handle incoming messages,
         supports !scorebot update and !scorebot reload."""
 
         if message.content.startswith("!scorebot"):
-            if message.author.id != "84627464709472256":
+            if message.author.id != 84627464709472256:
                 await self.post("beep boop, not authorized, exterminate")
 
             else:
@@ -75,7 +76,8 @@ class DiscordBot(discord_api.Client):
                 else:
                     print(f"unknown command: {message.content}")
 
-    async def post(self, text, channel_id="296636142210646016"):
+    async def post(self, text: str, channel_id: int = 296636142210646016) -> None:
         """Posts text to channel channel_id."""
         channel = self.get_channel(channel_id)
+        assert isinstance(channel, discord_api.TextChannel)
         await channel.send(text)

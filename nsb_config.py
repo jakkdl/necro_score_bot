@@ -3,9 +3,10 @@ import collections
 import configparser
 import abc
 import os
+from typing import Callable, Any, Optional, Sequence
 
 
-def evaluate_path(path):
+def evaluate_path(path: str) -> str:
     """
     Evaluates user/environment variables and relative path.
     """
@@ -17,7 +18,13 @@ def evaluate_path(path):
 
 # inspired by https://bitbucket.org/htv2013/argparse_actions/src
 class _MyAction(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(
+        self,
+        parser: Any,
+        namespace: argparse.Namespace,
+        values: Any,
+        option_string: Any = None,
+    ) -> None:
         if isinstance(values, collections.abc.Iterable) and not isinstance(values, str):
             folders = list(map(self.parse_value, values))
         else:
@@ -26,13 +33,13 @@ class _MyAction(argparse.Action):
 
     @staticmethod
     @abc.abstractmethod
-    def parse_value(value):
+    def parse_value(value: str) -> Any:
         pass
 
 
 class _File(_MyAction):
     @staticmethod
-    def parse_value(value):
+    def parse_value(value: str) -> Any:
         string = evaluate_path(value)
         if not os.path.isfile(string):
             print(f"Warning: invalid file {string}")
@@ -41,7 +48,7 @@ class _File(_MyAction):
 
 class _Bool(_MyAction):
     @staticmethod
-    def parse_value(value):
+    def parse_value(value: str) -> Any:
         if value.lower() == "true":
             return True
         if value.lower() == "false":
@@ -51,7 +58,7 @@ class _Bool(_MyAction):
 
 class _Directory(_MyAction):
     @staticmethod
-    def parse_value(value):
+    def parse_value(value: str) -> Any:
         string = evaluate_path(value)
         if not os.path.isdir(string):
             raise argparse.ArgumentTypeError(f"{string} is not a directory")
@@ -60,7 +67,7 @@ class _Directory(_MyAction):
 
 class _CreateDirectory(_MyAction):
     @staticmethod
-    def parse_value(value):
+    def parse_value(value: str) -> Any:
         string = evaluate_path(value)
         if not os.path.isdir(string):
             print(f"Creating directory: {string}")
@@ -68,20 +75,18 @@ class _CreateDirectory(_MyAction):
         return string
 
 
-def parse_file(value):
+def parse_file(value: str) -> str:
     with open(evaluate_path(value), encoding="utf8") as file:
         return file.read().rstrip()
 
 
 class Options(argparse.ArgumentParser):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(add_help=False)
-        self._configparser = configparser.ConfigParser()
-        self._config_values = None
         self._options = argparse.Namespace()
-        self._post_process: dict[str, callable] = {}
+        self._post_process: dict[str, Callable[[str], str]] = {}
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return getattr(self._options, key)
 
     def parse_config(self) -> argparse.Namespace:
@@ -102,10 +107,9 @@ class Options(argparse.ArgumentParser):
                 config_args.append(f"--{name.replace('_', '-')}={value}")
 
         super().parse_known_args(args=config_args, namespace=self._options)
-        self._config_values = self._options.__dict__.copy()
         return self._options
 
-    def parse(self):
+    def parse(self) -> argparse.Namespace:
         # Will exit here if --help is supplied
         super().parse_args(namespace=self._options)
 
@@ -113,29 +117,33 @@ class Options(argparse.ArgumentParser):
 
         return self._options
 
-    def parse_known_args(self, args=None, namespace=None):
+    def parse_known_args(
+        self,
+        args: Optional[Sequence[str]] = None,
+        namespace: Optional[argparse.Namespace] = None,
+    ) -> tuple[argparse.Namespace, list[str]]:
         if namespace is None:
             namespace = self._options
         return super().parse_known_args(args, namespace)
 
-    def generate_default_config(self):
+    def generate_default_config(self) -> None:
         # import ipdb; ipdb.set_trace()
         super().parse_known_args(args=[], namespace=self._options)
-        self._config_values = self._options.__dict__.copy()
+        config_values = self._options.__dict__.copy()
 
-        path = self._config_values.pop("config")
-        self._config_values.pop("generate_config")
-        values = {key: str(val) for key, val in self._config_values.items()}
+        path = config_values.pop("config")
+        config_values.pop("generate_config")
+        values = {key: str(val) for key, val in config_values.items()}
 
         parser = configparser.ConfigParser(defaults=values, default_section="general")
 
         with open(path, "w", encoding="utf-8") as file:
             parser.write(file)
 
-    def add_post_process(self, key, func):
+    def add_post_process(self, key: str, func: Callable[[str], str]) -> None:
         self._post_process[key] = func
 
-    def post_process(self):
+    def post_process(self) -> None:
         for key, func in self._post_process.items():
             assert key in self._options
             setattr(self._options, key, func(getattr(self._options, key)))

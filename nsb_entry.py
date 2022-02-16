@@ -8,39 +8,35 @@ from nsb_config import options
 
 
 class Entry:
-    def __init__(self, data, board, template, hist_data=None):
-        self.steam_id: int = data["steam_id"]
+    def __init__(
+        self,
+        data: nsb_leaderboard.BoardEntry,
+        board: nsb_leaderboard.Leaderboard,
+        template: str,
+        hist_data: Optional[nsb_leaderboard.BoardEntry] = None,
+    ):
+        self.steam_id: str = data.steam_id
 
-        self.linked_accounts: dict = self._fetch_linked_handles()
+        self.linked_accounts: dict[str, str] = self._fetch_linked_handles()
 
-        self.score: dict = {
-            "points": data["points"],
-            "rank": data["rank"],
-            "details": data["details"],
-        }
-        self.prev_score: Optional[dict] = None
-        if hist_data is not None:
-            self.prev_score: dict = {
-                "points": hist_data["points"],
-                "rank": hist_data["rank"],
-                "details": hist_data["details"],
-            }
+        self.score = data
+        self.prev_score = hist_data
 
         self.board: nsb_leaderboard.Leaderboard = board
         self.template: str = template
 
-    def __str__(self):
+    def __str__(self) -> str:
         if "steam_name" in self.linked_accounts:
             return self.linked_accounts["steam_name"]
-        return self.steam_id
+        return str(self.steam_id)
 
-    def necrolab_player(self):
+    def necrolab_player(self) -> dict[str, dict[str, str]]:
         url = f"https://api.necrolab.com/players/player?steamid={self.steam_id}"
         obj = nsb_steam.fetch_json(url)
 
-        return obj["data"]["linked"]
+        return obj["data"]["linked"]  # type: ignore
 
-    def _fetch_linked_handles(self) -> dict:
+    def _fetch_linked_handles(self) -> dict[str, str]:
         handles = {}
         if options["necrolab"]:
             try:
@@ -60,9 +56,9 @@ class Entry:
         # if discord
         return handles
 
-    def report(self):
+    def report(self) -> bool:
         # Check for public report
-        if self.score["rank"] <= options["public_report_rank_diff"]:
+        if self.score.rank <= options["public_report_rank_diff"]:
             return True
 
         if (

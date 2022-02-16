@@ -1,7 +1,8 @@
 import time
-import math
+
+# import math
 import concurrent.futures
-import typing
+from typing import Optional
 
 import nsb_leaderboard
 import nsb_steam_board
@@ -12,12 +13,11 @@ import nsb_format_points
 from nsb_config import options
 
 
-def print_board(num=5):
+def print_board(num: int = 5) -> None:
     if not options["board"]:
         raise AssertionError("You must specify a board to print")
 
     index = nsb_index.Index()
-    index.fetch()
 
     boards_to_print = [
         e
@@ -37,7 +37,7 @@ def print_board(num=5):
             print(nsb_format_points.format_message(entry))
 
 
-def update_threaded(index, num) -> typing.List[nsb_entry.Entry]:
+def update_threaded(index: nsb_index.Index, num: int) -> list[nsb_entry.Entry]:
     res = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         # Start the load operations and mark each future
@@ -51,9 +51,12 @@ def update_threaded(index, num) -> typing.List[nsb_entry.Entry]:
             index_entry = future_to_entry[future]
             try:
                 data = future.result()
-            except Exception as exc:
-                print(f"{index_entry} generated an exception: {exc}")
-            else:
+            # except Exception as exc:
+            #    print(f"{index_entry} generated an exception: {exc}")
+            # else:
+            finally:
+                if not data:
+                    continue
                 for entry in data:
                     if options["debug"]:
                         print(entry)
@@ -61,10 +64,12 @@ def update_threaded(index, num) -> typing.List[nsb_entry.Entry]:
     return res
 
 
-def update_nonthreaded(index, num) -> typing.List[nsb_entry.Entry]:
+def update_nonthreaded(index: nsb_index.Index, num: int) -> list[nsb_entry.Entry]:
     res = []
     for index_entry in index.entries():
         data = update_board(index_entry, num)
+        if not data:
+            continue
         for entry in data:
             if options["debug"]:
                 print(entry)
@@ -72,11 +77,10 @@ def update_nonthreaded(index, num) -> typing.List[nsb_entry.Entry]:
     return res
 
 
-def update(num_discord=50, num_twitter=5):
+def update(num_discord: int = 50, num_twitter: int = 5) -> list[nsb_entry.Entry]:
     print("start at: ", time.strftime("%c"))
 
     index = nsb_index.Index()
-    index.fetch()
 
     num = max(num_discord, num_twitter)
     if options["threaded"]:
@@ -84,7 +88,7 @@ def update(num_discord=50, num_twitter=5):
     else:
         res = update_nonthreaded(index, num)
 
-    discord_messages = []
+    discord_messages: list[nsb_entry.Entry] = []
     for entry in res:
         print(entry)
         # tweet if linked_twitter, or rank < public_tweet_limit
@@ -142,29 +146,29 @@ def update(num_discord=50, num_twitter=5):
 # >>>>>>> master
 
 
-def discord_include(entry, board):
-    entries = len(board.data)
-    rank = entry["rank"]
-    if rank <= 3:
-        return True
-    if board.board._mode == "score":
-        if rank <= math.ceil(entries * 0.05):
-            return True
+# def discord_include(entry, board):
+#    entries = len(board.data)
+#    rank = entry["rank"]
+#    if rank <= 3:
+#        return True
+#    if board.board._mode == "score":
+#        if rank <= math.ceil(entries * 0.05):
+#            return True
+#
+#        print("score not within 5%")
+#        return False
+#
+#    if rank <= math.ceil(entries * 0.10):
+#        return True
+#
+#    print("entry not within 10%")
+#    return False
 
-        print("score not within 5%")
-        return False
 
-    if rank <= math.ceil(entries * 0.10):
-        return True
-
-    print("entry not within 10%")
-    return False
-
-
-def check_deleted(board, num):
+def check_deleted(board: nsb_leaderboard.Leaderboard, num: int) -> bool:
     try:
         deleted_entries = board.check_for_deleted(num)
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         print(f"check_for_deleted threw exception {exc} in board {board}, skipping")
         # we probably have an older leaderboard
         return True
@@ -177,9 +181,10 @@ def check_deleted(board, num):
     return False
 
 
-def update_board(index_entry, num=100):
-    steam_board = nsb_steam_board.SteamBoard(index_entry)
-    board = nsb_leaderboard.Leaderboard(steam_board)
+def update_board(
+    index_entry: dict[str, str], num: int = 100
+) -> Optional[list[nsb_entry.Entry]]:
+    board = nsb_steam_board.SteamBoard(index_entry)
 
     if options["debug"]:
         print(str(board))
@@ -208,53 +213,53 @@ def update_board(index_entry, num=100):
     return entries
 
 
-def compose_tweet(data, linked_data):
-    msg = compose_message(data[1], data[0], url=True)
-    handle = linked_data["twitter"]["nickname"]
-    if handle:
-        if data[1]["rank"] <= 5:
-            return f".@{handle}{msg}"
+# def compose_tweet(data, linked_data):
+#    msg = compose_message(data[1], data[0], url=True)
+#    handle = linked_data["twitter"]["nickname"]
+#    if handle:
+#        if data[1]["rank"] <= 5:
+#            return f".@{handle}{msg}"
+#
+#        return f"@{handle}{msg}"
+#
+#    return f"{linked_data['steam']['personaname']} {msg}"
 
-        return f"@{handle}{msg}"
+# tag = ' #necrodancer'
 
-    return f"{linked_data['steam']['personaname']} {msg}"
+## TODO: yo this shit is unreadable
+# if 'twitter_username' in entry:
+#    twitterHandle = entry['twitter_username']
+# else:
+#    twitterHandle = board.get_twitter_handle(entry, twitter)
 
-    # tag = ' #necrodancer'
+# if twitterHandle:
+#    name = '@' + twitterHandle
+#    if board.includePublic(entry):
+#        name = '.' + name
+# elif 'name' in entry:
+#    name = entry['name']
+# elif options['steam_key']:
+#    name = nsb_steam.steamname(int(entry['steam_id']), options['steam_key'])
+# else:
+#    name = str(entry['steam_id'])
 
-    ## TODO: yo this shit is unreadable
-    # if 'twitter_username' in entry:
-    #    twitterHandle = entry['twitter_username']
-    # else:
-    #    twitterHandle = board.get_twitter_handle(entry, twitter)
+# if 'steam_id' in entry:
+#    community_manager = '@NecroDancerGame'
+#    if nsb_steam.known_cheater(entry['steam_id']):
+#        name = f'{community_manager}, cheater: {name}'
+#        tag = ''
+#    elif board.impossiblePoints(entry):
+#        name = f'{community_manager}, bugged: {name}'
+#        tag = ''
 
-    # if twitterHandle:
-    #    name = '@' + twitterHandle
-    #    if board.includePublic(entry):
-    #        name = '.' + name
-    # elif 'name' in entry:
-    #    name = entry['name']
-    # elif options['steam_key']:
-    #    name = nsb_steam.steamname(int(entry['steam_id']), options['steam_key'])
-    # else:
-    #    name = str(entry['steam_id'])
+#   length = len(full)
+#   if length + 24 < 140:
+#       full += ' ' + url
+#       if length + 24 + len(tag) < 140:
+#           full += tag
 
-    # if 'steam_id' in entry:
-    #    community_manager = '@NecroDancerGame'
-    #    if nsb_steam.known_cheater(entry['steam_id']):
-    #        name = f'{community_manager}, cheater: {name}'
-    #        tag = ''
-    #    elif board.impossiblePoints(entry):
-    #        name = f'{community_manager}, bugged: {name}'
-    #        tag = ''
-
-    #   length = len(full)
-    #   if length + 24 < 140:
-    #       full += ' ' + url
-    #       if length + 24 + len(tag) < 140:
-    #           full += tag
-
-    #   elif length > 140:
-    #       full = full[:140]
+#   elif length > 140:
+#       full = full[:140]
 
 
 #    full = (

@@ -5,7 +5,7 @@ import cotn_twitter
 import nsb_discord
 
 
-def main():
+def main() -> None:
     options = nsb_config.options
 
     if options["action"] == "update":

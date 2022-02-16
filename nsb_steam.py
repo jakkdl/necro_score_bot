@@ -5,12 +5,13 @@ import codecs
 import json
 import re
 import time
+from typing import Any, Optional
 
 from nsb_config import options
 from nsb_twitter import twitter
 
 
-def fetch_url(url, path=None):
+def fetch_url(url: str, path: Optional[str] = None) -> Any:
     tries = 3
     while True:
         try:
@@ -29,49 +30,53 @@ def fetch_url(url, path=None):
             time.sleep(5)
 
 
-def board_url(lbid, start, end):
+def board_url(lbid: int, start: int, end: int) -> str:
     return (
         f"http://steamcommunity.com/stats/247080/leaderboards/"
         f"{lbid}/?xml=1&start={start}&end={end}"
     )
 
 
-def leaderboard_url():
+def leaderboard_url() -> str:
     return "http://steamcommunity.com/stats/247080/leaderboards/?xml=1"
 
 
-def decode_response(response, re_codec="utf-8"):
+def decode_response(response: Any, re_codec: str = "utf-8") -> Any:
     data = response.read()
     text = data.decode(re_codec)
     return text
 
 
-def fetch_json(url):
+def fetch_json(url: str) -> Any:
     response = fetch_url(url)
     reader = codecs.getreader("utf-8")
     return json.load(reader(response))
 
 
-def download_index(path):
+def download_index(path: str) -> None:
     board_file = path + "leaderboards.xml"
     # fetch_url(leaderboardsurl, board_file)
     fetch_url(leaderboard_url(), board_file)
 
 
-def fetch_steamname(steam_id):
+def fetch_steamname(steam_id: str) -> str:
     url = (
         f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
         f"?key={options['steam_key']}&steamids={steam_id}"
     )
     obj = fetch_json(url)
-    return obj["response"]["players"][0]["personaname"]
+    name = obj["response"]["players"][0]["personaname"]
+    assert isinstance(name, str)
+    return name
 
 
-def get_twitter_handle(steam_id):
+def get_twitter_handle(steam_id: str) -> Optional[str]:
     url = f"http://steamcommunity.com/profiles/{steam_id}"
     text = decode_response(fetch_url(url), "latin-1")
 
-    match = re.search(r"twitter\.com\\/(?P<handle>\w+)\\\"", text)
+    match: Optional[re.Match[str]] = re.search(
+        r"twitter\.com\\/(?P<handle>\w+)\\\"", text
+    )
     if match is None:
         return match
 
@@ -87,13 +92,13 @@ def get_twitter_handle(steam_id):
     return None
 
 
-def known_cheater(steam_id):
-    file = "known_cheaters.txt"
-    if not os.path.isfile(file):
-        file = os.path.dirname(os.path.realpath(__file__)) + "/" + file
+def known_cheater(steam_id: str) -> bool:
+    filename = "known_cheaters.txt"
+    if not os.path.isfile(filename):
+        filename = os.path.dirname(os.path.realpath(__file__)) + "/" + filename
 
-    with open(file, "r", encoding="utf-8") as file:
+    with open(filename, "r", encoding="utf-8") as file:
         for line in file:
-            if int(line) == steam_id:
+            if int(line) == int(steam_id):
                 return True
     return False

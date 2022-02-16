@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 import nsb_database
 import nsb_steam
@@ -55,15 +56,15 @@ toofz_character_diffs = {
 
 
 class SteamBoard(nsb_leaderboard.Leaderboard):
-    def __init__(self, index_entry):
-        name = index_entry["name"].lower()
+    def __init__(self, index_entry: dict[str, str]) -> None:
+        name: str = index_entry["name"].lower()
         super().__init__(name)
 
-        self.display_name = index_entry["display_name"]
-        self.name = name
-        self._url = index_entry["url"]
+        self.display_name: str = index_entry["display_name"]
+        self.name: str = name
+        self._url: str = index_entry["url"]
         # self._character = _extract_character(name)
-        self.mode = self._extract_mode()
+        self.mode: str = self._extract_mode()
         # self._date = self._extract_date(name)
         # self._seeded = _check_seeded(name)
         # self._coop = _check_coop(name)
@@ -71,19 +72,19 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
         # self._dlc = _check_dlc(name)
         # self._extra = _check_extra_modes(name)
 
-    def fetch(self):
+    def fetch(self) -> None:
         # url = nsb_steam.board_url(self.lbid, 1, 100)
         response = nsb_steam.fetch_url(self._url)
         self.data = nsb_database.xml_to_list(response, "leaderboard")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.display_name
 
-    def _extract_mode(self):
+    def _extract_mode(self) -> str:
         if "/" in self.name:
             return "daily"
         if "speedrun" in self.name and "deathless" in self.name:
-            return None
+            return ""
         if "deathless" in self.name:
             return "deathless"
         if "speedrun" in self.name:
@@ -91,9 +92,9 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
         if "hardcore" in self.name:
             return "score"
         print(f"unknown mode in board {self.name}")
-        return None
+        return ""
 
-    def _extra_modes(self):
+    def _extra_modes(self) -> list[str]:
         extra_modes = []
         for mode in extras:
             if mode == "hard":
@@ -105,7 +106,7 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
                 extra_modes.append(mode)
         return extra_modes
 
-    def _character(self):
+    def _character(self) -> str:
         for i in names:
             if i in self.name:
                 return i
@@ -114,14 +115,13 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
         # that we're left with cadence
         return "cadence"
 
-    def _date(self):
-        if self.mode != "daily":
-            return None
+    def _date(self) -> datetime.date:
+        assert self.mode == "daily"
         name = self.name
         name = name.replace("_dev", "")
         name = name.replace("_prod", "")
-        split = name.split()[0]
-        split = split.split("/")
+        name = name.split()[0]
+        split = name.split("/")
         return datetime.date(int(split[2]), int(split[1]), int(split[0]))
 
     # def maxLeaderboardEntries(self):
@@ -140,11 +140,11 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
     # def maxCompareEntries(self):
     #    return 100
 
-    def impossible_score(self, data):
+    def impossible_score(self, data: dict[str, str]) -> bool:
         return self.mode == "score" and data["points"] > options["impossible_score"]
 
-    def pretty_url(self, person=None):
-        def toofz_support():
+    def pretty_url(self, person: Optional[dict[str, str]] = None) -> str:
+        def toofz_support() -> bool:
             if "coop" in self.name or "custom_music" in self.name:
                 return False
             if not self.mode:
@@ -154,7 +154,7 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
                 return False
             return True
 
-        def toofz_url():
+        def toofz_url() -> str:
             base = "https://crypt.toofz.com/leaderboards/"
             if "dlc" in self.name:
                 base += "amplified/"
@@ -167,7 +167,7 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
             char = self._character()
             char = toofz_character_diffs.get(char, char)
 
-            mode = self.mode
+            mode: str = self.mode
             if "seeded" in self.name:
                 mode = "seeded-" + mode
             if self._extra_modes():
