@@ -1,37 +1,25 @@
+"This file handles all the main leaderboard parsing and update logic"
 import pickle
 import os.path
-import abc
+from abc import abstractmethod
 from typing import Optional
-from dataclasses import dataclass
 
 import nsb_entry
 
 from nsb_config import options
-
-
-@dataclass
-class BoardEntry:
-    points: int
-    rank: int
-    steam_id: str
-
-    def __init__(self, data: dict[str, str]):
-        self.points = int(data["points"])
-        self.rank = int(data["rank"])
-        self.steam_id = data["steam_id"]
+from nsb_abc import BoardEntry
 
 
 class Leaderboard:
-    def __init__(self, name: str, key: str = "steam_id"):
+    def __init__(self, name: str):
         # TODO: call read and fetch on init
+        self.name: str = name.lower()
         self.mode: str = ""
-        self.data: list[dict[str, str]] = []
-        self.history: list[dict[str, str]] = []
+        self.data: list[BoardEntry] = []
+        self.history: list[BoardEntry] = []
 
         # Some other board has "name" as key, but don't remember what
-        self.key = key
-
-        self.path = os.path.join(options["data"], "boards", name + ".pickle")
+        self.path = os.path.join(options["data"], "boards", f"{self.name}.pickle")
 
     def has_file(self) -> bool:
         return self.path is not None and os.path.isfile(self.path)
@@ -49,19 +37,19 @@ class Leaderboard:
             # Pickle the 'data' dictionary using the highest protocol available.
             pickle.dump(self.data, file, pickle.HIGHEST_PROTOCOL)
 
-    @abc.abstractmethod
+    @abstractmethod
     def __str__(self) -> str:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def fetch(self) -> None:
         pass
         # url = nsb_steam.board_url(self.lbid, 1, 100)
         # response = nsb_steam.fetch_url(self._url)
         # self.data = self.board.parseResponse(response)
 
-    @abc.abstractmethod
-    def impossible_score(self, data: dict[str, str]) -> bool:
+    @abstractmethod
+    def impossible_score(self, data: BoardEntry) -> bool:
         pass
 
     def top_entries(self, num: Optional[int] = None) -> list[nsb_entry.Entry]:
@@ -70,9 +58,8 @@ class Leaderboard:
         assert isinstance(self.data, list)
         num = min(num, len(self.data))
         res = []
-        for data in self.data:
-            if not self.impossible_score(data):
-                board_entry = BoardEntry(data)
+        for board_entry in self.data:
+            if not self.impossible_score(board_entry):
                 board_entry.rank = self.real_rank(board_entry.rank)
                 res.append(
                     nsb_entry.Entry(
@@ -95,8 +82,8 @@ class Leaderboard:
             hist = self.history[i]
             found = False
             for person in self.data[: num + 20]:
-                if person["steam_id"] == hist["steam_id"]:
-                    if int(person["points"]) >= int(hist["points"]):
+                if person.uid == hist.uid:
+                    if person.points >= hist.points:
                         # print(self.history.index(hist), self.data.index(person))
                         found = True
                     else:
@@ -142,31 +129,28 @@ class Leaderboard:
             return []
 
         # Save all players according to unique key for fast lookup
-        curr_entries = {e[self.key]: e for e in self.data[:num]}
+        curr_entries = {e.uid: e for e in self.data[:num]}
 
         for hist in self.history[: max(len(self.data) // 2, num + 50)]:
             if not curr_entries:
                 break
 
-            curr = curr_entries.pop(hist[self.key], None)
+            curr = curr_entries.pop(hist.uid, None)
 
             if curr is None:
                 continue
 
-            curr_entry = BoardEntry(curr)
-            hist_entry = BoardEntry(hist)
-
             # If the person haven't improved points, don't include
-            if hist_entry.points >= curr_entry.points:
+            if hist.points >= curr.points:
                 continue
 
-            hist_entry.rank = self.real_rank(hist_entry.rank)
-            curr_entry.rank = self.real_rank(curr_entry.rank)
+            hist.rank = self.real_rank(hist.rank)
+            curr.rank = self.real_rank(curr.rank)
 
-            template = self.get_template(curr_entry, hist_entry)
+            template = self.get_template(curr, hist)
 
             entry = nsb_entry.Entry(
-                board=self, data=curr_entry, hist_data=hist_entry, template=template
+                board=self, data=curr, hist_data=hist, template=template
             )
             if not entry.report():
                 continue
@@ -174,11 +158,10 @@ class Leaderboard:
 
         # TODO: this is the dangerous loop, and will often also include only cheaters
         # and garbage records. Maybe special-case for small boards only?
-        for curr in curr_entries.values():
-            curr_entry = BoardEntry(curr)
-            curr_entry.rank = self.real_rank(curr_entry.rank)
-            template = self.get_template(curr_entry)
-            entry = nsb_entry.Entry(board=self, data=curr_entry, template=template)
+        for data in curr_entries.values():
+            data.rank = self.real_rank(data.rank)
+            template = self.get_template(data)
+            entry = nsb_entry.Entry(board=self, data=data, template=template)
             if not entry.report():
                 continue
             result.append(entry)
@@ -231,6 +214,6 @@ class Leaderboard:
     #            return True
     #    return False
 
-    @abc.abstractmethod
+    @abstractmethod
     def pretty_url(self, person: Optional[nsb_entry.Entry] = None) -> str:
         pass

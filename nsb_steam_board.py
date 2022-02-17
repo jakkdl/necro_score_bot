@@ -1,12 +1,15 @@
+"This file contains the class for a normal Steam, Crypt of the NecroDancer leaderboard."
+
 import datetime
+import xml.etree.ElementTree as ET
 from typing import Optional
 
 import requests
 
-import nsb_database
 import nsb_leaderboard
 import nsb_entry
 from nsb_config import options
+from nsb_abc import NsbError, BoardEntry
 
 ##character
 # All-Char DLC, All-Char, story mode, Aria, Bard, Bolt, Cadence, Coda, Diamond,
@@ -55,29 +58,43 @@ toofz_character_diffs = {
     "story mode": "story-mode",
 }
 
+xml_conversion_table = (
+    ("steamid", "uid"),
+    ("score", "points"),
+    ("rank", "rank"),
+)
+
 
 class SteamBoard(nsb_leaderboard.Leaderboard):
-    def __init__(self, index_entry: dict[str, str]) -> None:
-        name: str = index_entry["name"].lower()
+    def __init__(self, url: str, name: str, display_name: str):
         super().__init__(name)
 
-        self.display_name: str = index_entry["display_name"]
-        self.name: str = name
-        self._url: str = index_entry["url"]
-        # self._character = _extract_character(name)
+        self.display_name: str = display_name
+        self._url: str = url
         self.mode: str = self._extract_mode()
-        # self._date = self._extract_date(name)
-        # self._seeded = _check_seeded(name)
-        # self._coop = _check_coop(name)
-        # self._custom_music = _check_custom_music(name)
-        # self._dlc = _check_dlc(name)
-        # self._extra = _check_extra_modes(name)
 
     def fetch(self) -> None:
         # url = nsb_steam.board_url(self.lbid, 1, 100)
         # response = nsb_steam.fetch_url(self._url)
         response = requests.get(self._url)
-        self.data = nsb_database.xml_to_list(response, "leaderboard")
+        text = response.text
+        xml = ET.fromstring(text)
+        for index, element in enumerate(xml):
+            if element.tag == "entries":
+                break
+        else:
+            raise NsbError(f"No entries in steam board {self.name}")
+
+        for entry in xml[index]:
+            values: dict[str, int] = {}
+            for field, target in xml_conversion_table:
+                data_entry = entry.find(field)
+                if data_entry is None:
+                    raise ValueError(f"Failed to find entry {field} for board {entry}")
+                if data_entry.text is None:
+                    raise NsbError(f"no value for {field} in board {entry}")
+                values[target] = int(data_entry.text)
+            self.data.append(BoardEntry(**values))
 
     def __str__(self) -> str:
         return self.display_name
@@ -142,8 +159,8 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
     # def maxCompareEntries(self):
     #    return 100
 
-    def impossible_score(self, data: dict[str, str]) -> bool:
-        return self.mode == "score" and data["points"] > options["impossible_score"]
+    def impossible_score(self, data: BoardEntry) -> bool:
+        return self.mode == "score" and data.points > options["impossible_score"]
 
     def pretty_url(self, person: Optional[nsb_entry.Entry] = None) -> str:
         def toofz_support() -> bool:

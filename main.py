@@ -9,7 +9,7 @@ def main() -> None:
     options = nsb_config.options
 
     if options["action"] == "update":
-        cotn_twitter.update()
+        print(list(cotn_twitter.update()))
 
     elif options["action"] == "discord":
         discord_client = nsb_discord.DiscordBot()

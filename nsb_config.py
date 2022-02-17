@@ -5,6 +5,11 @@ import abc
 import os
 from typing import Callable, Any, Optional, Sequence
 
+default_xdg = {
+    "$XDG_CONFIG_HOME": "$HOME/.config",
+    "$XDG_DATA_HOME": "$HOME/.local/share",
+}
+
 
 def evaluate_path(path: str) -> str:
     """
@@ -12,6 +17,13 @@ def evaluate_path(path: str) -> str:
     """
     path = os.path.expanduser(path)
     path = os.path.expandvars(path)
+    unresolved_xdg = False
+    for key, val in default_xdg.items():
+        if key in path:
+            path.replace(key, val)
+            unresolved_xdg = True
+    if unresolved_xdg:
+        path = os.path.expandvars(path)
     path = os.path.abspath(path)
     return path
 
@@ -221,6 +233,9 @@ options.add_argument(
 )
 
 options.add_argument("--tweet", help="enable tweeting", action=_Bool, default=False)
+options.add_argument(
+    "--threaded", help="multi-threaded updating", action=_Bool, default=False
+)
 options.add_argument(
     "--post-discord", help="enable posting to discord", action=_Bool, default=False
 )

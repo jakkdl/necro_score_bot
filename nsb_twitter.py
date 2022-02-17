@@ -19,7 +19,9 @@ class Twitter:
             oauth_token, oauth_secret = twitter_api.read_token_file(
                 os.path.join(options["twitter_keys"], "credentials")
             )
-        except FileNotFoundError:
+        except FileNotFoundError as error:
+            if options["debug"]:
+                print(f"didn't find file for twitter tokens, {error}")
             self.agent = None
         finally:
             self.agent = twitter_api.Twitter(
@@ -34,8 +36,8 @@ class Twitter:
         try:
             self.agent.users.show(screen_name=handle)
             return handle
-        except Exception as exception:  # pylint: disable=broad-except
-            print(f"you should specify {exception} in this except.")
+        except twitter_api.api.TwitterError as exception:  # pylint: disable=broad-except
+            print(f"failed to check {handle}, got {exception}")
             return None
 
     def post_tweet(self, text: str) -> None:

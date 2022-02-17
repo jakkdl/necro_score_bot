@@ -1,6 +1,6 @@
 from typing import Callable, cast, Optional
-import nsb_leaderboard
 import nsb_entry
+from nsb_abc import BoardEntry
 
 format_dict: dict[str, Callable[[nsb_entry.Entry], str]] = {
     # "$NAME$": str,
@@ -11,17 +11,15 @@ format_dict: dict[str, Callable[[nsb_entry.Entry], str]] = {
     # maybe not the cleanest way to handle the optional BoardEntry, should maybe
     # be a function with assert
     "$DELTATIME$": lambda e: _format_time(
-        _score_to_ms(
-            cast(nsb_leaderboard.BoardEntry, e.prev_score).points - e.score.points
-        )
+        _score_to_ms(cast(BoardEntry, e.prev_score).points - e.score.points)
     ),
     "$PROGRESS$": lambda e: _format_progress(e.score.points),
     "$DELTAPROGRESS$": lambda e: _relative_progress(
-        e.score.points, cast(nsb_leaderboard.BoardEntry, e.prev_score).points
+        e.score.points, cast(BoardEntry, e.prev_score).points
     ),
     "$SCORE$": lambda e: str(e.score.points),
     "$DELTASCORE$": lambda e: str(
-        cast(nsb_leaderboard.BoardEntry, e.prev_score).points - e.score.points
+        cast(BoardEntry, e.prev_score).points - e.score.points
     ),
     "$TOOFZURL": lambda e: e.pretty_url(),
 }

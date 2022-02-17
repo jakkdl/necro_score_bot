@@ -2,12 +2,13 @@ import time
 import concurrent.futures
 from typing import Optional, Iterable
 
+import requests
+
 import nsb_leaderboard
 import nsb_steam_board
 import nsb_index
 import nsb_entry
 import nsb_format_points
-
 from nsb_twitter import twitter
 from nsb_config import options
 
@@ -16,38 +17,38 @@ def print_board(num: int = 5) -> None:
     if not options["board"]:
         raise AssertionError("You must specify a board to print")
 
-    index = nsb_index.Index()
+    try:
+        index = nsb_index.Index()
+    except requests.exceptions.ConnectionError as error:
+        print(f"failed to fetch index, got {error}")
+        return
 
     boards_to_print = [
-        e
-        for e in index.entries()
+        b
+        for b in index.boards
         if (
-            options["board"].lower() in e["display_name"].lower()
-            or options["board"].lower() in e["name"].lower()
+            options["board"].lower() in b.display_name.lower()
+            or options["board"].lower() in b.name
         )
     ]
 
-    for index_entry in boards_to_print:
-        print(index_entry)
-        board = nsb_steam_board.SteamBoard(index_entry)
+    for board in boards_to_print:
+        print(board)
         board.fetch()
         entries = board.top_entries(num)
         for entry in entries:
             print(nsb_format_points.format_message(entry))
 
 
-def update_threaded(index: nsb_index.Index, num: int) -> list[nsb_entry.Entry]:
+def _update_threaded(index: nsb_index.Index, num: int) -> list[nsb_entry.Entry]:
+    """Helper function for update(), which runs the main update loop concurrently."""
     res = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         # Start the load operations and mark each future
         # with its index_entry
-        future_to_entry = {
-            executor.submit(update_board, index_entry, num): index_entry
-            for index_entry in index.entries()
-        }
+        futures = [executor.submit(update_board, board, num) for board in index.boards]
 
-        for future in concurrent.futures.as_completed(future_to_entry):
-            index_entry = future_to_entry[future]
+        for future in concurrent.futures.as_completed(futures):
             try:
                 data = future.result()
             # except Exception as exc:
@@ -63,10 +64,11 @@ def update_threaded(index: nsb_index.Index, num: int) -> list[nsb_entry.Entry]:
     return res
 
 
-def update_nonthreaded(index: nsb_index.Index, num: int) -> list[nsb_entry.Entry]:
+def _update_nonthreaded(index: nsb_index.Index, num: int) -> list[nsb_entry.Entry]:
+    """Helper function for update(), mostly used for development."""
     res = []
-    for index_entry in index.entries():
-        data = update_board(index_entry, num)
+    for board in index.boards:
+        data = update_board(board, num)
         if not data:
             continue
         for entry in data:
@@ -77,15 +79,16 @@ def update_nonthreaded(index: nsb_index.Index, num: int) -> list[nsb_entry.Entry
 
 
 def update(num_discord: int = 50, num_twitter: int = 5) -> Iterable[str]:
+    """Main update function, called by main and nsb_discord."""
     print("start at: ", time.strftime("%c"))
 
     index = nsb_index.Index()
 
     num = max(num_discord, num_twitter)
     if options["threaded"]:
-        res = update_threaded(index, num)
+        res = _update_threaded(index, num)
     else:
-        res = update_nonthreaded(index, num)
+        res = _update_nonthreaded(index, num)
 
     for entry in res:
         print(entry)
@@ -151,14 +154,13 @@ def check_deleted(board: nsb_leaderboard.Leaderboard, num: int) -> bool:
 
 
 def update_board(
-    index_entry: dict[str, str], num: int = 100
+    board: nsb_steam_board.SteamBoard, num: int = 100
 ) -> Optional[list[nsb_entry.Entry]]:
-    board = nsb_steam_board.SteamBoard(index_entry)
 
     if options["debug"]:
         print(str(board))
 
-    if not board.has_file() and not options["handle-new"]:
+    if not board.has_file() and not options["handle_new"]:
         print(f"New leaderboard {board}, use --handle-new to use")
         return None
 
@@ -186,19 +188,8 @@ def update_board(
 #    community_manager = '@NecroDancerGame'
 #    if nsb_steam.known_cheater(entry['steam_id']):
 #        name = f'{community_manager}, cheater: {name}'
-#        tag = ''
 #    elif board.impossiblePoints(entry):
 #        name = f'{community_manager}, bugged: {name}'
-#        tag = ''
-
-#   length = len(full)
-#   if length + 24 < 140:
-#       full += ' ' + url
-#       if length + 24 + len(tag) < 140:
-#           full += tag
-
-#   elif length > 140:
-#       full = full[:140]
 
 
 # def composeDailyMessage(persons, board, twitter):

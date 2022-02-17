@@ -1,24 +1,31 @@
-import urllib
+""" A parsed leaderboard entry, created when nsb_leaderboard detects an entry as significant."""
+from __future__ import annotations
 import json
 import re
-from typing import Optional
+from typing import Optional, cast, TYPE_CHECKING
 
 import requests
 
-import nsb_leaderboard
 from nsb_config import options
 from nsb_twitter import twitter
+from nsb_abc import BoardEntry
+
+if TYPE_CHECKING:
+    import nsb_leaderboard
+
+# I need both the __future__ annotations and TYPE_CHECKING to avoid
+# circular import. Can alternatively create an abc.py with types.
 
 
 class Entry:
     def __init__(
         self,
-        data: nsb_leaderboard.BoardEntry,
+        data: BoardEntry,
         board: nsb_leaderboard.Leaderboard,
         template: str,
-        hist_data: Optional[nsb_leaderboard.BoardEntry] = None,
+        hist_data: Optional[BoardEntry] = None,
     ):
-        self.steam_id: str = data.steam_id
+        self.steam_id: int = data.uid
 
         self.linked_accounts: dict[str, str] = self._fetch_linked_handles()
 
@@ -45,7 +52,10 @@ class Entry:
 
     def get_twitter_handle(self) -> str:
         url = f"http://steamcommunity.com/profiles/{self.steam_id}"
-        text = requests.get(url).text
+        try:
+            text = requests.get(url).text
+        except requests.exceptions.ConnectionError as error:
+            print(f"failed to fetch steam profile for {self.steam_id}, caught {error}")
         # text = decode_response(fetch_url(url), "latin-1")
 
         match: Optional[re.Match[str]] = re.search(
@@ -67,9 +77,9 @@ class Entry:
 
     def necrolab_player(self) -> dict[str, dict[str, str]]:
         url = f"https://api.necrolab.com/players/player?steamid={self.steam_id}"
-        obj = requests.get(url).json
+        obj = requests.get(url).json()
 
-        return obj["data"]["linked"]  # type: ignore
+        return cast(dict[str, dict[str, str]], obj["data"]["linked"])
 
     def _fetch_linked_handles(self) -> dict[str, str]:
         handles = {"steam_name": "", "discord_id": "", "twitter_handle": ""}
@@ -80,10 +90,10 @@ class Entry:
                 handles["discord_id"] = data["discord"]["id"]
                 handles["twitter_handle"] = data["twitter"]["name"]
             except (
-                urllib.error.URLError,
+                requests.exceptions.ConnectionError,
                 json.decoder.JSONDecodeError,
-            ):
-                pass
+            ) as error:
+                print(f"caught {error} fetching necrolab data for {self.steam_id}")
 
         if not handles["steam_name"] and options["steam_key"]:
             handles["steam_name"] = self.fetch_steamname()
