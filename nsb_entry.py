@@ -1,10 +1,13 @@
 import urllib
 import json
+import re
 from typing import Optional
 
+import requests
+
 import nsb_leaderboard
-import nsb_steam
 from nsb_config import options
+from nsb_twitter import twitter
 
 
 class Entry:
@@ -30,14 +33,46 @@ class Entry:
             return self.linked_accounts["steam_name"]
         return str(self.steam_id)
 
+    def fetch_steamname(self) -> str:
+        url = (
+            f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
+            f"?key={options['steam_key']}&steamids={self.steam_id}"
+        )
+        obj = requests.get(url).json()
+        name = obj["response"]["players"][0]["personaname"]
+        assert isinstance(name, str)
+        return name
+
+    def get_twitter_handle(self) -> str:
+        url = f"http://steamcommunity.com/profiles/{self.steam_id}"
+        text = requests.get(url).text
+        # text = decode_response(fetch_url(url), "latin-1")
+
+        match: Optional[re.Match[str]] = re.search(
+            r"twitter\.com\\/(?P<handle>\w+)\\\"", text
+        )
+        if match is None:
+            return ""
+
+        handle = match.group("handle")
+
+        if not twitter:
+            print("Warning: unverified handle")
+            return handle
+        if twitter.check_twitter_handle(handle):
+            return handle
+
+        print(f"{handle} in steam profile but not valid")
+        return ""
+
     def necrolab_player(self) -> dict[str, dict[str, str]]:
         url = f"https://api.necrolab.com/players/player?steamid={self.steam_id}"
-        obj = nsb_steam.fetch_json(url)
+        obj = requests.get(url).json
 
         return obj["data"]["linked"]  # type: ignore
 
     def _fetch_linked_handles(self) -> dict[str, str]:
-        handles = {}
+        handles = {"steam_name": "", "discord_id": "", "twitter_handle": ""}
         if options["necrolab"]:
             try:
                 data = self.necrolab_player()
@@ -50,13 +85,11 @@ class Entry:
             ):
                 pass
 
-        if "steam_name" not in handles and options["steam_key"]:
-            handles["steam_name"] = nsb_steam.fetch_steamname(self.steam_id)
+        if not handles["steam_name"] and options["steam_key"]:
+            handles["steam_name"] = self.fetch_steamname()
 
-        if "twitter_handle" not in handles and options["steam_key"]:
-            twitter_handle = nsb_steam.get_twitter_handle(self.steam_id)
-            if twitter_handle:
-                handles["twitter_handle"] = twitter_handle
+        if not handles["twitter_handle"] and options["steam_key"]:
+            handles["twitter_handle"] = self.get_twitter_handle()
 
         # if discord
         return handles

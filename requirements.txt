@@ -1,4 +1,8 @@
 pylint
+mypy
+vulture
 twitter
 discord.py
 discord.py-stubs
+requests
+requests-stubs

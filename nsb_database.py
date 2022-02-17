@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
-
 from typing import Any, cast
-import nsb_steam
+
+import requests
 
 
 def entry_index(xml: ET.Element) -> int:
@@ -27,8 +27,10 @@ def convert_if_possible(data: str) -> Any:
     return data
 
 
-def xml_to_list(response: Any, response_type: str) -> list[dict[str, str]]:
-    text = nsb_steam.decode_response(response)
+def xml_to_list(
+    response: requests.Response, response_type: str
+) -> list[dict[str, str]]:
+    text = response.text
     data = ET.fromstring(text)
     return xml_to_list_internal(data, response_type)
 

@@ -4,7 +4,6 @@ import abc
 from typing import Optional
 from dataclasses import dataclass
 
-import nsb_steam
 import nsb_entry
 
 from nsb_config import options
@@ -186,11 +185,23 @@ class Leaderboard:
 
         return result
 
+    # @staticmethod
+    # def known_cheater(steam_id: str) -> bool:
+    #    filename = "known_cheaters.txt"
+    #    if not os.path.isfile(filename):
+    #        filename = os.path.dirname(os.path.realpath(__file__)) + "/" + filename
+
+    #    with open(filename, "r", encoding="utf-8") as file:
+    #        for line in file:
+    #            if int(line) == int(steam_id):
+    #                return True
+    #    return False
+
     def real_rank(self, rank: int) -> int:
         assert self.data is not None
         subtract = 0
         for i in self.data[: rank - 1]:
-            if self.impossible_score(i) or nsb_steam.known_cheater(i["steam_id"]):
+            if self.impossible_score(i):  # or self.known_cheater(i["steam_id"]):
                 # print(i)
                 subtract += 1
         return rank - subtract

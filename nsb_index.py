@@ -1,6 +1,7 @@
 import pickle
+import requests
+
 from nsb_config import options
-import nsb_steam
 import nsb_database
 
 
@@ -19,8 +20,8 @@ class Index:
 
     @staticmethod
     def _fetch() -> list[dict[str, str]]:
-        url = nsb_steam.leaderboard_url()
-        response = nsb_steam.fetch_url(url)
+        url = "http://steamcommunity.com/stats/247080/leaderboards/?xml=1"
+        response = requests.get(url)
         return nsb_database.xml_to_list(response=response, response_type="index")
 
     def write(self) -> None:

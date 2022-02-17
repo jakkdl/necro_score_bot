@@ -1,11 +1,11 @@
 import datetime
 from typing import Optional
 
+import requests
+
 import nsb_database
-import nsb_steam
 import nsb_leaderboard
 import nsb_entry
-
 from nsb_config import options
 
 ##character
@@ -75,7 +75,8 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
 
     def fetch(self) -> None:
         # url = nsb_steam.board_url(self.lbid, 1, 100)
-        response = nsb_steam.fetch_url(self._url)
+        # response = nsb_steam.fetch_url(self._url)
+        response = requests.get(self._url)
         self.data = nsb_database.xml_to_list(response, "leaderboard")
 
     def __str__(self) -> str:
