@@ -79,13 +79,14 @@ class SteamBoard(nsb_leaderboard.Leaderboard):
         response = requests.get(self._url)
         text = response.text
         xml = ET.fromstring(text)
+
         for index, element in enumerate(xml):
             if element.tag == "entries":
                 break
         else:
             raise NsbError(f"No entries in steam board {self.name}")
 
-        for entry in xml[index]:
+        for entry in xml[index]: # pylint: disable=undefined-loop-variable
             values: dict[str, int] = {}
             for field, target in xml_conversion_table:
                 data_entry = entry.find(field)

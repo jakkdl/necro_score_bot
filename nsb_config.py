@@ -3,9 +3,12 @@ import collections
 import configparser
 import abc
 import os
+import logging
 from typing import Callable, Any, Optional, Sequence
 
-default_xdg = {
+logger = logging.getLogger("necro_score_bot")
+
+_DEFAULT_XDG = {
     "$XDG_CONFIG_HOME": "$HOME/.config",
     "$XDG_DATA_HOME": "$HOME/.local/share",
 }
@@ -18,7 +21,7 @@ def evaluate_path(path: str) -> str:
     path = os.path.expanduser(path)
     path = os.path.expandvars(path)
     unresolved_xdg = False
-    for key, val in default_xdg.items():
+    for key, val in _DEFAULT_XDG.items():
         if key in path:
             path.replace(key, val)
             unresolved_xdg = True
@@ -54,7 +57,7 @@ class _File(_MyAction):
     def parse_value(value: str) -> Any:
         string = evaluate_path(value)
         if not os.path.isfile(string):
-            print(f"Warning: invalid file {string}")
+            logger.warning("invalid file %s", string)
         return string
 
 
@@ -82,9 +85,16 @@ class _CreateDirectory(_MyAction):
     def parse_value(value: str) -> Any:
         string = evaluate_path(value)
         if not os.path.isdir(string):
-            print(f"Creating directory: {string}")
+            logger.info("Creating directory: %s", string)
             os.mkdir(string)
         return string
+
+
+class _SetLogLevel(_MyAction):
+    @staticmethod
+    def parse_value(value: str) -> Any:
+        logger.setLevel(value.upper())
+        return value
 
 
 def parse_file(value: str) -> str:
@@ -112,21 +122,13 @@ class Options(argparse.ArgumentParser):
 
             # more friendly error message in case file/section is missing
             if "general" not in parser:
-                print(f"Warning: section [general] missing from {path}")
+                logger.warning("section [general] missing from %s", path)
 
             # look up expected entries and convert as specified
             for name, value in parser["general"].items():
                 config_args.append(f"--{name.replace('_', '-')}={value}")
 
         super().parse_known_args(args=config_args, namespace=self._options)
-        return self._options
-
-    def parse(self) -> argparse.Namespace:
-        # Will exit here if --help is supplied
-        super().parse_args(namespace=self._options)
-
-        # cl_options = {k: v for k, v in self._options.items() if v is not None}
-
         return self._options
 
     def parse_known_args(
@@ -196,6 +198,13 @@ options.add_argument(
     metavar="DIRECTORY",
     action=_CreateDirectory,
     default=evaluate_path("$XDG_DATA_HOME/necro_score_bot/"),
+)
+
+options.add_argument(
+    "--log-level",
+    help="set log level",
+    action=_SetLogLevel,
+    choices=["info", "debug", "warning", "error", "critical"],
 )
 
 options.add_argument(
@@ -363,13 +372,6 @@ options.add_argument(
 )
 
 options.add_argument(
-    "--debug",
-    help="display debug messages, prints tweets to stdout",
-    action="store_true",
-    default=False,
-)
-
-options.add_argument(
     "--dry-run",
     help="Don't tweet, download or change any files",
     action="store_true",
@@ -386,5 +388,5 @@ options.add_argument(
     help="show this help message and exit",
 )
 
-options.parse()
+options.parse_args()
 options.post_process()

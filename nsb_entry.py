@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import re
+import logging
 from typing import Optional, cast, TYPE_CHECKING
 
 import requests
@@ -14,7 +15,9 @@ if TYPE_CHECKING:
     import nsb_leaderboard
 
 # I need both the __future__ annotations and TYPE_CHECKING to avoid
-# circular import. Can alternatively create an abc.py with types.
+# circular import. Can alternatively create an abc
+
+logger = logging.getLogger("necro_score_bot")
 
 
 class Entry:
@@ -55,7 +58,9 @@ class Entry:
         try:
             text = requests.get(url).text
         except requests.exceptions.ConnectionError as error:
-            print(f"failed to fetch steam profile for {self.steam_id}, caught {error}")
+            logger.warning(
+                "failed to fetch steam profile for %s", self.steam_id, exc_info=error
+            )
         # text = decode_response(fetch_url(url), "latin-1")
 
         match: Optional[re.Match[str]] = re.search(
@@ -67,12 +72,12 @@ class Entry:
         handle = match.group("handle")
 
         if not twitter:
-            print("Warning: unverified handle")
+            logger.warning("unverified handle %s", handle)
             return handle
         if twitter.check_twitter_handle(handle):
             return handle
 
-        print(f"{handle} in steam profile but not valid")
+        logger.warning("%s in steam profile but not valid", handle)
         return ""
 
     def necrolab_player(self) -> dict[str, dict[str, str]]:
@@ -93,7 +98,11 @@ class Entry:
                 requests.exceptions.ConnectionError,
                 json.decoder.JSONDecodeError,
             ) as error:
-                print(f"caught {error} fetching necrolab data for {self.steam_id}")
+                logger.warning(
+                    "failed to fetch necrolab data for %s",
+                    self.steam_id,
+                    exc_info=error,
+                )
 
         if not handles["steam_name"] and options["steam_key"]:
             handles["steam_name"] = self.fetch_steamname()
